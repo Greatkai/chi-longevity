@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { AuthProvider } from "@/store/auth-store";
+import { AssessmentProvider } from "@/store/assessment-store";
 
 export const metadata: Metadata = {
   title: "百岁白皮书 · 中国百岁健康标准指数评估",
@@ -18,9 +20,13 @@ export default function RootLayout({
   return (
     <html lang="zh-CN">
       <body className="flex min-h-screen flex-col">
-        <Navbar />
-        <main className="flex-1">{children}</main>
-        <Footer />
+        <AuthProvider>
+          <AssessmentProvider>
+            <Navbar />
+            <main className="flex-1">{children}</main>
+            <Footer />
+          </AssessmentProvider>
+        </AuthProvider>
       </body>
     </html>
   );

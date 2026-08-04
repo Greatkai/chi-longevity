@@ -1,11 +1,15 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: "standalone",
   reactStrictMode: true,
-  serverExternalPackages: ["better-sqlite3"],
+  experimental: {
+    // Next 14：让 pg 作为服务端外部包，避免被打包进浏览器 bundle
+    serverComponentsExternalPackages: ["pg"],
+  },
   webpack: (config) => {
-    config.externals = [...(config.externals || []), { "better-sqlite3": "commonjs better-sqlite3" }];
+    config.externals = [...(config.externals || []), { pg: "commonjs pg" }];
     return config;
   },
 };
 
-module.exports = nextConfig;
+export default nextConfig;
