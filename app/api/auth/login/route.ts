@@ -1,11 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-import { findUserByEmail, verifyPassword, updateLastLogin } from "@/lib/db";
+import {
+  findUserByEmail,
+  verifyPassword,
+  updateLastLogin,
+  ensureAdmin,
+} from "@/lib/db";
 import { createSessionToken, setSessionCookie } from "@/lib/auth/session";
 
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
   try {
+    // 确保默认管理员账号存在（幂等）
+    await ensureAdmin();
+
     const body = await req.json();
     const email = String(body.email || "").trim();
     const password = String(body.password || "");
