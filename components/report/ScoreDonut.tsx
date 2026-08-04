@@ -32,18 +32,20 @@ export function ScoreDonut({ score, level, label }: Props) {
             stroke="none"
           >
             <Cell fill={color} />
-            <Cell fill="#EEF4FB" />
+            <Cell fill="rgba(255,255,255,0.18)" />
           </Pie>
         </PieChart>
       </ResponsiveContainer>
       <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-sm text-ink-600">综合长寿指数</span>
-        <span className="text-4xl font-bold text-ink-900">
+        <span className="text-sm font-medium tracking-wide text-white/90">
+          综合长寿指数
+        </span>
+        <span className="mt-1 text-5xl font-bold leading-none text-white drop-shadow-sm">
           {display}
-          <span className="text-lg text-ink-400">/100</span>
+          <span className="ml-1 text-lg font-medium text-white/80">/100</span>
         </span>
         <span
-          className="mt-1 rounded-full px-3 py-0.5 text-xs font-semibold text-white"
+          className="mt-2 rounded-full px-3.5 py-1 text-xs font-bold text-white shadow-md"
           style={{ backgroundColor: color }}
         >
           {label}

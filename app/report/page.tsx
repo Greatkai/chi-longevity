@@ -11,6 +11,8 @@ import {
   ArrowLeft,
   TrendingUp,
   BrainCircuit,
+  Activity,
+  Sparkles,
 } from "lucide-react";
 import { useAssessment } from "@/store/assessment-store";
 import { useAuth } from "@/store/auth-store";
@@ -123,6 +125,31 @@ export default function ReportPage() {
         <div id="report-export" className="space-y-8">
         {/* 综合得分区 */}
         <div className="card overflow-hidden">
+          {/* 报告封面头部 */}
+          <div className="flex items-center justify-between border-b border-brand-100 bg-gradient-to-r from-brand-50/80 to-white px-6 py-5 md:px-8">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-gradient text-white shadow-md">
+                <BrainCircuit className="h-6 w-6" />
+              </div>
+              <div>
+                <div className="text-sm font-bold text-ink-900">百岁白皮书 · 长寿指数评估报告</div>
+                <div className="text-xs text-ink-400">中国百岁健康标准指数（CHLI）</div>
+              </div>
+            </div>
+            <div className="hidden text-right sm:block">
+              <div className="text-xs text-ink-400">报告生成时间</div>
+              <div className="text-sm font-semibold text-brand-700">
+                {new Date(result.createdAt || Date.now()).toLocaleString("zh-CN", {
+                  year: "numeric",
+                  month: "2-digit",
+                  day: "2-digit",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </div>
+            </div>
+          </div>
+
           <div className="grid gap-0 md:grid-cols-2">
             {/* 左侧：综合指数 */}
             <div className="relative flex flex-col items-center justify-center overflow-hidden border-b border-brand-100 bg-brand-gradient p-10 md:border-b-0 md:border-r">
@@ -130,11 +157,7 @@ export default function ReportPage() {
               <div className="bg-grid pointer-events-none absolute inset-0 opacity-30" />
               {/* 光晕 */}
               <div className="glow-ring left-[-40px] top-[-40px] h-48 w-48 bg-white/15" />
-              <div className="relative flex items-center gap-2 text-white/85">
-                <BrainCircuit className="h-5 w-5" />
-                <span className="text-sm font-medium">中国百岁健康标准指数</span>
-              </div>
-              <div className="relative mt-4">
+              <div className="relative">
                 <ScoreDonut score={result.chliScore} level={result.level} label={result.label} />
               </div>
               <p className="relative mt-4 max-w-xs text-center text-sm leading-relaxed text-white/85">
@@ -270,22 +293,28 @@ export default function ReportPage() {
 
         {/* 维度小结 */}
         <div className="mt-8 grid gap-4 md:grid-cols-2">
-          <div className="card border-emerald-200 bg-emerald-50/40 p-6">
-            <div className="flex items-center gap-2">
-              <span className="h-3 w-3 rounded-full bg-emerald-500" />
-              <h4 className="font-bold text-emerald-700">优势维度</h4>
+          <div className="card card-accent relative overflow-hidden border-emerald-200 bg-gradient-to-br from-emerald-50/70 to-white p-6">
+            <div className="absolute right-4 top-4 h-16 w-16 rounded-full bg-emerald-100/60" />
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500 text-white shadow-md">
+                <TrendingUp className="h-5 w-5" />
+              </span>
+              <h4 className="text-base font-bold text-emerald-700">优势维度</h4>
             </div>
-            <p className="mt-2 text-sm text-ink-600">
+            <p className="mt-3 text-sm leading-relaxed text-ink-600">
               <strong className="text-emerald-700">{strongest.name}</strong>{" "}
               得分最高（{Math.round(strongest.score)} 分），是您健康寿命的重要支撑。
             </p>
           </div>
-          <div className="card border-amber-200 bg-amber-50/40 p-6">
-            <div className="flex items-center gap-2">
-              <span className="h-3 w-3 rounded-full bg-amber-500" />
-              <h4 className="font-bold text-amber-700">重点关注</h4>
+          <div className="card card-accent relative overflow-hidden border-amber-200 bg-gradient-to-br from-amber-50/70 to-white p-6">
+            <div className="absolute right-4 top-4 h-16 w-16 rounded-full bg-amber-100/60" />
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500 text-white shadow-md">
+                <Activity className="h-5 w-5" />
+              </span>
+              <h4 className="text-base font-bold text-amber-700">重点关注</h4>
             </div>
-            <p className="mt-2 text-sm text-ink-600">
+            <p className="mt-3 text-sm leading-relaxed text-ink-600">
               <strong className="text-amber-700">{weakest.name}</strong>{" "}
               得分相对较低（{Math.round(weakest.score)} 分），建议优先改善以提升整体指数。
             </p>
@@ -299,33 +328,39 @@ export default function ReportPage() {
 
         {/* FSHI 附加模块 */}
         {result.fshi && (
-          <div className="mt-8 card p-6 md:p-8">
-            <h3 className="text-lg font-bold text-ink-900">
-              FSHI 功能与感觉健康指数
-            </h3>
-            <p className="mt-1 text-sm text-ink-400">
-              附加评估模块，综合功能健康、生活方式与心理状态
-            </p>
-            <div className="mt-4 flex items-center gap-6">
+          <div className="mt-8 card card-accent p-6 md:p-8">
+            <div className="mb-5 flex items-center gap-2.5">
+              <span className="h-8 w-1.5 rounded-full bg-brand-gradient" />
+              <div>
+                <h3 className="text-lg font-bold text-ink-900">
+                  FSHI 功能与感觉健康指数
+                </h3>
+                <p className="text-sm text-ink-400">
+                  附加评估模块，综合功能健康、生活方式与心理状态
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-col items-center gap-6 sm:flex-row">
               <div
-                className="flex h-24 w-24 items-center justify-center rounded-full text-white"
+                className="flex h-28 w-28 shrink-0 items-center justify-center rounded-full text-white shadow-lg"
                 style={{
                   backgroundColor: RISK_META[result.fshi.level].color,
+                  boxShadow: `0 8px 20px ${RISK_META[result.fshi.level].color}40`,
                 }}
               >
                 <div className="text-center">
-                  <div className="text-2xl font-bold">{Math.round(result.fshi.score)}</div>
+                  <div className="text-3xl font-bold">{Math.round(result.fshi.score)}</div>
                   <div className="text-xs opacity-90">/100</div>
                 </div>
               </div>
-              <div>
+              <div className="text-center sm:text-left">
                 <span
-                  className="rounded-full px-3 py-1 text-xs font-semibold text-white"
+                  className="rounded-full px-3.5 py-1 text-xs font-bold text-white shadow-sm"
                   style={{ backgroundColor: RISK_META[result.fshi.level].color }}
                 >
                   {RISK_META[result.fshi.level].label}
                 </span>
-                <p className="mt-2 text-sm text-ink-600">
+                <p className="mt-3 text-sm leading-relaxed text-ink-600">
                   {RISK_META[result.fshi.level].description}
                 </p>
               </div>
@@ -336,7 +371,7 @@ export default function ReportPage() {
 
         {/* 导出区 */}
         <div id="export" className="mt-8">
-          <ExportPanel contentId="report-export" />
+          <ExportPanel contentId="report-export" result={result} />
         </div>
       </div>
     </div>
