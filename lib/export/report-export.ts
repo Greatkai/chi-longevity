@@ -102,10 +102,9 @@ export async function exportShareImage(
   siteUrl = "https://chi-longevity.bmaxkai.me"
 ): Promise<void> {
   const W = 750;
-  // 固定各区块高度
-  const headerH = 220;
+  const headerH = 360; // 加大顶部渐变区，确保布局不重叠
   const bodyH = 560;
-  const footerH = 300;
+  const footerH = 320;
   const H = headerH + bodyH + footerH;
 
   const canvas = document.createElement("canvas");
@@ -122,7 +121,7 @@ export async function exportShareImage(
   const grad = ctx.createLinearGradient(0, 0, W, headerH);
   grad.addColorStop(0, "#042A4D");
   grad.addColorStop(0.45, "#0A5BA8");
-  grad.addColorStop(1, "#3186D8");
+  grad.addColorStop(1, "#3186D6");
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, W, headerH);
 
@@ -131,29 +130,45 @@ export async function exportShareImage(
   ctx.shadowColor = "rgba(0,0,0,0.2)";
   ctx.shadowBlur = 10;
   ctx.fillStyle = "rgba(255,255,255,0.16)";
-  roundRect(ctx, W / 2 - 165, 40, 330, 46, 23);
+  roundRect(ctx, W / 2 - 180, 50, 360, 50, 25);
   ctx.fill();
   ctx.restore();
   ctx.fillStyle = "#FFFFFF";
-  ctx.font = "600 24px 'PingFang SC','Microsoft YaHei',sans-serif";
+  ctx.font = "600 26px 'PingFang SC','Microsoft YaHei',sans-serif";
   ctx.textAlign = "center";
-  ctx.fillText("百岁白皮书 · 长寿指数评估", W / 2, 70);
+  ctx.fillText("百岁白皮书 · 长寿指数评估", W / 2, 84);
 
   ctx.fillStyle = "rgba(255,255,255,0.85)";
   ctx.font = "20px 'PingFang SC','Microsoft YaHei',sans-serif";
-  ctx.fillText("中国百岁健康标准指数（CHLI）", W / 2, 108);
+  ctx.fillText("中国百岁健康标准指数（CHLI）", W / 2, 124);
 
-  // 综合指数
+  // 综合指数标题
   ctx.fillStyle = "rgba(255,255,255,0.92)";
   ctx.font = "600 22px 'PingFang SC','Microsoft YaHei',sans-serif";
-  ctx.fillText("综合长寿指数", W / 2, 152);
+  ctx.fillText("综合长寿指数", W / 2, 170);
 
+  // 综合指数大数字（居中布局，整组数字+斜杠视觉居中）
+  ctx.font = "800 110px 'PingFang SC','Microsoft YaHei',sans-serif";
+  const scoreText = String(score);
+  const scoreW = ctx.measureText(scoreText).width;
+  ctx.font = "500 32px 'PingFang SC','Microsoft YaHei',sans-serif";
+  const slashW = ctx.measureText("/ 100").width;
+  const totalW = scoreW + 12 + slashW;
+  const startX = (W - totalW) / 2;
+  ctx.font = "800 110px 'PingFang SC','Microsoft YaHei',sans-serif";
   ctx.fillStyle = "#FFFFFF";
-  ctx.font = "800 96px 'PingFang SC','Microsoft YaHei',sans-serif";
-  ctx.fillText(String(score), W / 2 - 40, 208);
-  ctx.font = "500 30px 'PingFang SC','Microsoft YaHei',sans-serif";
-  ctx.fillStyle = "rgba(255,255,255,0.8)";
-  ctx.fillText("/ 100", W / 2 + 90, 200);
+  ctx.fillText(scoreText, startX, 280);
+  ctx.font = "500 32px 'PingFang SC','Microsoft YaHei',sans-serif";
+  ctx.fillStyle = "rgba(255,255,255,0.85)";
+  ctx.fillText("/ 100", startX + scoreW + 12, 270);
+
+  // 等级标签
+  ctx.fillStyle = levelColor;
+  roundRect(ctx, W / 2 - 80, 300, 160, 42, 21);
+  ctx.fill();
+  ctx.fillStyle = "#FFFFFF";
+  ctx.font = "700 20px 'PingFang SC','Microsoft YaHei',sans-serif";
+  ctx.fillText(`健康等级：${result.label}`, W / 2, 328);
 
   /* ---------- 内容主体 ---------- */
   ctx.fillStyle = "#F0F6FC";
@@ -171,54 +186,57 @@ export async function exportShareImage(
   ctx.shadowOffsetY = 0;
 
   ctx.fillStyle = "#12232E";
-  ctx.font = "700 26px 'PingFang SC','Microsoft YaHei',sans-serif";
+  ctx.font = "700 28px 'PingFang SC','Microsoft YaHei',sans-serif";
   ctx.textAlign = "left";
-  ctx.fillText("六大维度得分", 56, headerH + 74);
+  ctx.fillText("六大维度得分", 56, headerH + 78);
 
-  // 维度条形
-  const barStartX = 210;
-  const barW = W - 64 - barStartX - 80 - 20;
-  const rowH = 74;
-  const startY = headerH + 108;
-  ctx.font = "600 22px 'PingFang SC','Microsoft YaHei',sans-serif";
+  // 维度条形布局：给维度名足够空间
+  const labelW = 200; // 维度名+键的宽度
+  const barStartX = 56 + labelW + 24; // 维度名后留 24px 间距
+  const scoreW2 = 80; // 分数宽度
+  const barW = W - 56 * 2 - labelW - 24 - scoreW2;
+  const rowH = 70;
+  const startY = headerH + 116;
   dims.forEach((d, i) => {
     const c = LEVEL_COLORS[d.level] || "#3186D8";
     const s = Math.round(d.score);
     const y = startY + i * rowH;
 
-    // 维度名
+    // 维度名（限定宽度内）
     ctx.fillStyle = "#12232E";
+    ctx.font = "600 22px 'PingFang SC','Microsoft YaHei',sans-serif";
     ctx.textAlign = "left";
-    ctx.fillText(`${d.key} · ${d.name}`, 56, y);
+    ctx.fillText(`${d.key} · ${d.name}`, 56, y, labelW);
 
     // 条形背景
     ctx.fillStyle = "#DCE9F8";
-    roundRect(ctx, barStartX, y - 16, barW, 22, 11);
+    roundRect(ctx, barStartX, y - 18, barW, 24, 12);
     ctx.fill();
     // 条形填充
     ctx.fillStyle = c;
     const fillW = Math.max(0, (s / 100) * barW);
     if (fillW > 0) {
-      roundRect(ctx, barStartX, y - 16, fillW, 22, 11);
+      roundRect(ctx, barStartX, y - 18, fillW, 24, 12);
       ctx.fill();
     }
     // 分数
     ctx.fillStyle = "#12232E";
+    ctx.font = "700 24px 'PingFang SC','Microsoft YaHei',sans-serif";
     ctx.textAlign = "right";
-    ctx.font = "700 22px 'PingFang SC','Microsoft YaHei',sans-serif";
-    ctx.fillText(String(s), W - 64, y);
+    ctx.fillText(String(s), W - 56, y);
   });
 
-  /* ---------- 底部：二维码 ---------- */
+  /* ---------- 底部：二维码（扫码测试） ---------- */
   ctx.fillStyle = "#F0F6FC";
   ctx.fillRect(0, headerH + bodyH, W, footerH);
   ctx.fillStyle = "#FFFFFF";
-  roundRect(ctx, 100, headerH + bodyH + 24, W - 200, footerH - 68, 18);
+  roundRect(ctx, 100, headerH + bodyH + 30, W - 200, footerH - 80, 18);
   ctx.fill();
 
   // 加载二维码图片并绘制
-  const qrDataUrl = await QRCode.toDataURL(siteUrl, {
-    width: 220,
+  const qrUrl = `${siteUrl}/questionnaire`;
+  const qrDataUrl = await QRCode.toDataURL(qrUrl, {
+    width: 240,
     margin: 1,
     color: { dark: "#063D70", light: "#FFFFFF" },
   });
@@ -229,27 +247,27 @@ export async function exportShareImage(
     qrImg.src = qrDataUrl;
   });
 
-  const qrY = headerH + bodyH + 52;
-  ctx.drawImage(qrImg, 130, qrY, 180, 180);
+  const qrY = headerH + bodyH + 58;
+  ctx.drawImage(qrImg, 130, qrY, 200, 200);
 
   ctx.textAlign = "left";
   ctx.fillStyle = "#0A5BA8";
-  ctx.font = "700 26px 'PingFang SC','Microsoft YaHei',sans-serif";
-  ctx.fillText("扫码查看完整报告", 340, qrY + 46);
+  ctx.font = "700 28px 'PingFang SC','Microsoft YaHei',sans-serif";
+  ctx.fillText("扫码立即测试评估", 360, qrY + 56);
 
   ctx.fillStyle = "#8494A6";
   ctx.font = "20px 'PingFang SC','Microsoft YaHei',sans-serif";
-  ctx.fillText("百岁白皮书 · CHLI 长寿评估", 340, qrY + 84);
+  ctx.fillText("百岁白皮书 · CHLI 长寿评估", 360, qrY + 96);
 
   ctx.fillStyle = "#55677A";
   ctx.font = "18px 'PingFang SC','Microsoft YaHei',sans-serif";
-  wrapText(ctx, siteUrl, 340, qrY + 120, W - 340 - 60, 26);
+  wrapText(ctx, qrUrl, 360, qrY + 134, W - 360 - 60, 26);
 
   // 免责声明
   ctx.fillStyle = "#8494A6";
   ctx.font = "18px 'PingFang SC','Microsoft YaHei',sans-serif";
   ctx.textAlign = "center";
-  ctx.fillText("健康数据仅供参考，不构成医疗建议 · 请及时就医", W / 2, headerH + bodyH + footerH - 24);
+  ctx.fillText("健康数据仅供参考，不构成医疗建议 · 请及时就医", W / 2, headerH + bodyH + footerH - 30);
 
   // 导出
   const dataUrl = canvas.toDataURL("image/png");
@@ -475,8 +493,10 @@ export async function generateA4Pages(
     ctx.fillRect(0, 0, A4W, A4H);
     drawHeader(ctx, "六大维度得分", "各维度得分与风险等级（满分 100 分）", 2);
 
-    const barStartX = 200;
-    const barW = A4W - 48 * 2 - barStartX - 80;
+    const labelW = 180; // 维度名宽度
+    const barStartX = 48 + labelW + 20;
+    const scoreW = 70;
+    const barW = A4W - 48 * 2 - labelW - 20 - scoreW;
     const rowH = 88;
     const startY = 260;
     dims.forEach((d, i) => {
@@ -487,17 +507,17 @@ export async function generateA4Pages(
       ctx.fillStyle = "#12232E";
       ctx.font = "600 18px 'PingFang SC','Microsoft YaHei',sans-serif";
       ctx.textAlign = "left";
-      ctx.fillText(`${d.key} · ${d.name}`, 48, y);
+      ctx.fillText(`${d.key} · ${d.name}`, 48, y, labelW);
 
       // 背景条
       ctx.fillStyle = "#DCE9F8";
-      roundRect(ctx, barStartX, y - 16, barW, 26, 13);
+      roundRect(ctx, barStartX, y - 18, barW, 28, 14);
       ctx.fill();
       // 填充
       ctx.fillStyle = c;
       const fillW = Math.max(0, (s / 100) * barW);
       if (fillW > 0) {
-        roundRect(ctx, barStartX, y - 16, fillW, 26, 13);
+        roundRect(ctx, barStartX, y - 18, fillW, 28, 14);
         ctx.fill();
       }
       // 分数
