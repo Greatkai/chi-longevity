@@ -170,15 +170,49 @@ export async function exportShareImage(
   el.appendChild(body);
   el.appendChild(footer);
 
-  // 放入文档以便测量
+  // 放入文档
   document.body.appendChild(el);
 
   try {
-    const dataUrl = await toPng(el, { pixelRatio: 2 });
+    // 等待所有图片（二维码）加载完成，避免渲染出空白
+    const images = Array.from(el.querySelectorAll("img"));
+    await Promise.all(
+      images.map(
+        (img) =>
+          new Promise<void>((resolve) => {
+            if (img.complete && img.naturalWidth > 0) return resolve();
+            img.onload = () => resolve();
+            img.onerror = () => resolve();
+            // 兜底：避免卡住
+            setTimeout(resolve, 3000);
+          })
+      )
+    );
+
+    // 强制重排，确保样式计算完成
+    void el.offsetHeight;
+
+    // 等待两帧，确保浏览器完成布局与绘制
+    await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+
+    const dataUrl = await toPng(el, {
+      pixelRatio: 2,
+      cacheBust: true,
+      // 跳过字体嵌入，避免中文因字体加载问题渲染空白
+      skipFonts: true,
+      width: el.offsetWidth,
+      height: el.offsetHeight,
+      style: {
+        transform: "none",
+      },
+    });
     const link = document.createElement("a");
     link.download = "长寿指数分享.png";
     link.href = dataUrl;
     link.click();
+  } catch (e) {
+    console.error("生成分享图失败:", e);
+    throw e;
   } finally {
     document.body.removeChild(el);
   }
