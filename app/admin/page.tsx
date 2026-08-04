@@ -271,8 +271,8 @@ export default function AdminPage() {
         {/* 统计卡片 */}
         <div className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
           {statCards.map((card) => (
-            <div key={card.label} className="card card-hover flex items-center gap-4 p-5">
-              <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${card.color}`}>
+            <div key={card.label} className="card card-accent card-hover flex items-center gap-4 p-5">
+              <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl shadow-sm ${card.color}`}>
                 <card.icon className="h-6 w-6" />
               </div>
               <div className="min-w-0">
@@ -287,7 +287,7 @@ export default function AdminPage() {
 
         {/* 趋势图 */}
         <div className="mt-6 grid gap-6 lg:grid-cols-2">
-          <div className="card p-6">
+          <div className="card card-accent p-6">
             <div className="mb-4 flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-brand-600" />
               <h2 className="font-bold text-ink-900">近 30 天评估报告趋势</h2>
@@ -314,7 +314,7 @@ export default function AdminPage() {
             </div>
           </div>
 
-          <div className="card p-6">
+          <div className="card card-accent p-6">
             <div className="mb-4 flex items-center gap-2">
               <Users className="h-5 w-5 text-brand-600" />
               <h2 className="font-bold text-ink-900">近 30 天注册用户趋势</h2>
@@ -375,7 +375,7 @@ export default function AdminPage() {
           </div>
 
           {/* 等级分布 */}
-          <div className="card p-6">
+          <div className="card card-accent p-6">
             <div className="mb-4 flex items-center gap-2">
               <PieChartIcon className="h-5 w-5 text-brand-600" />
               <h2 className="font-bold text-ink-900">风险等级分布</h2>

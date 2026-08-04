@@ -125,38 +125,48 @@ export default function ReportPage() {
         <div className="card overflow-hidden">
           <div className="grid gap-0 md:grid-cols-2">
             {/* 左侧：综合指数 */}
-            <div className="flex flex-col items-center justify-center border-b border-brand-100 bg-brand-gradient p-10 md:border-b-0 md:border-r">
-              <div className="flex items-center gap-2 text-white/80">
+            <div className="relative flex flex-col items-center justify-center overflow-hidden border-b border-brand-100 bg-brand-gradient p-10 md:border-b-0 md:border-r">
+              {/* 网格纹理 */}
+              <div className="bg-grid pointer-events-none absolute inset-0 opacity-30" />
+              {/* 光晕 */}
+              <div className="glow-ring left-[-40px] top-[-40px] h-48 w-48 bg-white/15" />
+              <div className="relative flex items-center gap-2 text-white/85">
                 <BrainCircuit className="h-5 w-5" />
                 <span className="text-sm font-medium">中国百岁健康标准指数</span>
               </div>
-              <div className="mt-4">
+              <div className="relative mt-4">
                 <ScoreDonut score={result.chliScore} level={result.level} label={result.label} />
               </div>
-              <p className="mt-4 max-w-xs text-center text-sm leading-relaxed text-white/85">
+              <p className="relative mt-4 max-w-xs text-center text-sm leading-relaxed text-white/85">
                 {meta.description}
               </p>
             </div>
 
             {/* 右侧：生物年龄对比 */}
-            <div className="flex flex-col justify-center p-10">
+            <div className="flex flex-col justify-center p-8 md:p-10">
               <h3 className="mb-6 text-lg font-bold text-ink-900">生物年龄对比</h3>
               <div className="grid grid-cols-2 gap-4">
-                <div className="rounded-2xl bg-brand-50 p-5 text-center">
-                  <div className="text-xs text-ink-600">实际年龄</div>
-                  <div className="mt-1 text-3xl font-bold text-ink-900">
+                <div className="rounded-2xl border border-brand-100 bg-gradient-to-br from-brand-50 to-white p-5 text-center shadow-soft">
+                  <div className="text-xs font-medium text-ink-600">实际年龄</div>
+                  <div className="mt-2 text-4xl font-bold text-ink-900">
                     {result.bioAge.actualAge}
-                    <span className="text-base text-ink-400">岁</span>
+                    <span className="text-base font-normal text-ink-400">岁</span>
                   </div>
                 </div>
-                <div className="rounded-2xl bg-brand-50 p-5 text-center">
-                  <div className="text-xs text-ink-600">生物年龄</div>
+                <div
+                  className="rounded-2xl border p-5 text-center shadow-soft"
+                  style={{
+                    backgroundColor: `${meta.color}12`,
+                    borderColor: `${meta.color}40`,
+                  }}
+                >
+                  <div className="text-xs font-medium text-ink-600">生物年龄</div>
                   <div
-                    className="mt-1 text-3xl font-bold"
+                    className="mt-2 text-4xl font-bold"
                     style={{ color: meta.color }}
                   >
                     {result.bioAge.biologicalAge}
-                    <span className="text-base text-ink-400">岁</span>
+                    <span className="text-base font-normal text-ink-400">岁</span>
                   </div>
                 </div>
               </div>
@@ -185,14 +195,24 @@ export default function ReportPage() {
 
         {/* 雷达图 + 柱状图 */}
         <div className="mt-8 grid gap-8 lg:grid-cols-2">
-          <div className="card p-6 md:p-8">
-            <h3 className="mb-2 text-lg font-bold text-ink-900">六大维度分布</h3>
-            <p className="mb-4 text-sm text-ink-400">各维度得分可视化对比</p>
+          <div className="card card-accent p-6 md:p-8">
+            <div className="mb-5 flex items-center gap-2.5">
+              <span className="h-8 w-1.5 rounded-full bg-brand-gradient" />
+              <div>
+                <h3 className="text-lg font-bold text-ink-900">六大维度分布</h3>
+                <p className="text-sm text-ink-400">各维度得分可视化对比</p>
+              </div>
+            </div>
             <DimensionRadar result={result} />
           </div>
-          <div className="card p-6 md:p-8">
-            <h3 className="mb-2 text-lg font-bold text-ink-900">维度得分明细</h3>
-            <p className="mb-4 text-sm text-ink-400">满分 100 分，按权重加权计算</p>
+          <div className="card card-accent p-6 md:p-8">
+            <div className="mb-5 flex items-center gap-2.5">
+              <span className="h-8 w-1.5 rounded-full bg-brand-gradient" />
+              <div>
+                <h3 className="text-lg font-bold text-ink-900">维度得分明细</h3>
+                <p className="text-sm text-ink-400">满分 100 分，按权重加权计算</p>
+              </div>
+            </div>
             <DimensionBars result={result} />
           </div>
         </div>
@@ -202,35 +222,46 @@ export default function ReportPage() {
           {result.dimensions.map((d) => {
             const dMeta = RISK_META[d.level];
             return (
-              <div key={d.key} className="card card-hover p-5">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-bold text-ink-900">
-                    {d.key} · {d.name}
-                  </span>
-                  <span
-                    className="rounded-full px-2.5 py-0.5 text-xs font-semibold text-white"
-                    style={{ backgroundColor: dMeta.color }}
-                  >
-                    {dMeta.label}
-                  </span>
-                </div>
-                <div className="mt-3 flex items-end justify-between">
-                  <span className="text-3xl font-bold text-ink-900">
-                    {Math.round(d.score)}
-                    <span className="text-sm text-ink-400">/100</span>
-                  </span>
-                  <span className="text-xs text-ink-400">
-                    权重 {d.weight * 100}%
-                  </span>
-                </div>
-                <div className="mt-3 h-2 overflow-hidden rounded-full bg-brand-100">
-                  <div
-                    className="h-full rounded-full transition-all duration-700"
-                    style={{
-                      width: `${d.score}%`,
-                      backgroundColor: dMeta.color,
-                    }}
-                  />
+              <div
+                key={d.key}
+                className="card card-accent card-hover relative overflow-hidden p-5"
+              >
+                {/* 左侧色条 */}
+                <div
+                  className="absolute left-0 top-0 h-full w-1.5"
+                  style={{ backgroundColor: dMeta.color }}
+                />
+                <div className="pl-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-bold text-ink-900">
+                      {d.key} · {d.name}
+                    </span>
+                    <span
+                      className="rounded-full px-2.5 py-0.5 text-xs font-semibold text-white shadow-sm"
+                      style={{ backgroundColor: dMeta.color }}
+                    >
+                      {dMeta.label}
+                    </span>
+                  </div>
+                  <div className="mt-4 flex items-end justify-between">
+                    <span className="text-4xl font-bold text-ink-900">
+                      {Math.round(d.score)}
+                      <span className="text-sm font-normal text-ink-400">/100</span>
+                    </span>
+                    <span className="rounded-full bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-600">
+                      权重 {d.weight * 100}%
+                    </span>
+                  </div>
+                  <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-brand-100 shadow-inner">
+                    <div
+                      className="h-full rounded-full transition-all duration-700"
+                      style={{
+                        width: `${d.score}%`,
+                        backgroundColor: dMeta.color,
+                        boxShadow: `0 0 8px ${dMeta.color}60`,
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
             );

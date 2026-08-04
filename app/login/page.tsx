@@ -39,10 +39,15 @@ function LoginContent() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-brand-soft px-4 pt-16">
-      <div className="w-full max-w-md animate-fade-up">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-brand-soft px-4 pt-16">
+      {/* 背景装饰 */}
+      <div className="bg-grid-light pointer-events-none absolute inset-0 opacity-50" />
+      <div className="glow-ring pointer-events-none left-[-60px] top-24 h-72 w-72 bg-brand-200/50" />
+      <div className="glow-ring pointer-events-none right-[-60px] bottom-20 h-80 w-80 bg-brand-100/60" />
+
+      <div className="relative w-full max-w-md animate-fade-up">
         <div className="mb-8 text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-gradient text-white shadow-lg">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-gradient text-white shadow-lg shadow-brand-500/30">
             <Stethoscope className="h-9 w-9" />
           </div>
           <h1 className="mt-4 text-2xl font-bold text-ink-900">百岁白皮书</h1>
@@ -51,7 +56,7 @@ function LoginContent() {
           </p>
         </div>
 
-        <div className="card p-8">
+        <div className="card card-accent p-8">
           {/* Tab 切换 */}
           <div className="mb-6 grid grid-cols-2 rounded-xl bg-brand-50 p-1">
             {(

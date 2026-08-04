@@ -92,7 +92,7 @@ export default function HistoryPage() {
       <div className="container-page py-10">
         <div className="mx-auto max-w-4xl">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-gradient text-white shadow-md">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-gradient text-white shadow-lg shadow-brand-500/30">
               <FileText className="h-6 w-6" />
             </div>
             <div>
@@ -109,7 +109,7 @@ export default function HistoryPage() {
               <p className="mt-3 text-sm text-ink-600">加载中...</p>
             </div>
           ) : reports.length === 0 ? (
-            <div className="card mt-8 flex flex-col items-center justify-center p-16 text-center">
+            <div className="card card-accent mt-8 flex flex-col items-center justify-center p-16 text-center">
               <div className="flex h-20 w-20 items-center justify-center rounded-full bg-brand-50">
                 <ClipboardList className="h-10 w-10 text-brand-300" />
               </div>
@@ -131,11 +131,16 @@ export default function HistoryPage() {
                 return (
                   <div
                     key={report.id}
-                    className="card card-hover flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between"
+                    className="card card-hover relative flex flex-col gap-4 overflow-hidden p-6 sm:flex-row sm:items-center sm:justify-between"
                   >
-                    <div className="flex items-center gap-4">
+                    {/* 左侧色条 */}
+                    <div
+                      className="absolute left-0 top-0 h-full w-1.5"
+                      style={{ backgroundColor: meta.color }}
+                    />
+                    <div className="flex items-center gap-4 pl-1">
                       <div
-                        className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-white"
+                        className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-white shadow-md"
                         style={{ backgroundColor: meta.color }}
                       >
                         <span className="text-lg font-bold">

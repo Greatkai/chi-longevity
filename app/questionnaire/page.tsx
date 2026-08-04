@@ -60,15 +60,18 @@ export default function QuestionnairePage() {
   const progress = ((step + 1) / totalSteps) * 100;
 
   return (
-    <div className="min-h-screen bg-brand-soft pt-16">
-      <div className="container-page py-10">
+    <div className="relative min-h-screen bg-brand-soft pt-16">
+      {/* 背景点阵 */}
+      <div className="bg-grid-light pointer-events-none absolute inset-0 opacity-50" />
+      <div className="container-page relative py-10">
         {/* 头部 */}
         <div className="mx-auto max-w-4xl text-center">
-          <span className="text-sm font-semibold uppercase tracking-widest text-brand-600">
+          <span className="section-tag">
+            <Sparkles className="h-3.5 w-3.5" />
             长寿指数评估
           </span>
-          <h1 className="mt-2 text-3xl font-bold text-ink-900 md:text-4xl">
-            六大维度健康问卷
+          <h1 className="mt-4 text-3xl font-bold text-ink-900 md:text-4xl">
+            六大维度<span className="text-gradient">健康问卷</span>
           </h1>
           <p className="mt-3 text-ink-600">
             请依次完成各维度的信息填写，或使用 AI 智能填写快速录入
@@ -76,36 +79,36 @@ export default function QuestionnairePage() {
         </div>
 
         {/* 进度条 */}
-        <div className="mx-auto mt-8 max-w-4xl">
+        <div className="mx-auto mt-10 max-w-4xl">
           <div className="flex items-center justify-between text-sm">
-            <span className="font-medium text-brand-700">
+            <span className="rounded-full bg-brand-100 px-3 py-1 font-semibold text-brand-700">
               第 {step + 1} / {totalSteps} 步
             </span>
-            <span className="text-ink-400">{Math.round(progress)}%</span>
+            <span className="font-semibold text-brand-600">{Math.round(progress)}%</span>
           </div>
-          <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-brand-100">
+          <div className="mt-3 h-3 overflow-hidden rounded-full bg-brand-100 shadow-inner">
             <div
-              className="h-full rounded-full bg-brand-gradient transition-all duration-500"
+              className="h-full rounded-full bg-brand-gradient shadow-md transition-all duration-500"
               style={{ width: `${progress}%` }}
             />
           </div>
 
           {/* 步骤指示器 */}
-          <div className="mt-6 grid grid-cols-3 gap-2 md:grid-cols-6">
+          <div className="mt-7 grid grid-cols-3 gap-2.5 md:grid-cols-6">
             {DIMENSIONS.map((dim, i) => (
               <button
                 key={dim.key}
                 onClick={() => setStep(i)}
                 className={cn(
-                  "flex flex-col items-center gap-1 rounded-xl border-2 py-2.5 transition-all",
+                  "group flex flex-col items-center gap-1.5 rounded-xl border-2 py-3 transition-all duration-300",
                   i === step
-                    ? "border-brand-500 bg-brand-50 text-brand-700"
+                    ? "border-brand-500 bg-gradient-to-br from-brand-50 to-white text-brand-700 shadow-soft"
                     : i < step
-                    ? "border-brand-200 bg-white text-brand-600"
-                    : "border-brand-100 bg-white text-ink-400"
+                    ? "border-brand-200 bg-white text-brand-600 hover:border-brand-300 hover:shadow-sm"
+                    : "border-brand-100 bg-white text-ink-400 hover:border-brand-200 hover:text-ink-600"
                 )}
               >
-                <dim.icon className="h-4 w-4" />
+                <dim.icon className="h-4 w-4 transition-transform duration-300 group-hover:scale-110" />
                 <span className="text-xs font-medium">{dim.key}</span>
               </button>
             ))}
@@ -114,12 +117,12 @@ export default function QuestionnairePage() {
 
         {/* 内容区 */}
         <div className="mx-auto mt-8 max-w-4xl">
-          <div className="mb-4 flex justify-end">
+          <div className="mb-5 flex justify-end">
             <button
               onClick={() => setShowAI(!showAI)}
-              className="inline-flex items-center gap-2 rounded-xl border border-brand-300 bg-white px-4 py-2 text-sm font-semibold text-brand-700 transition-all hover:bg-brand-50"
+              className="group inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-400 to-orange-400 px-4 py-2.5 text-sm font-semibold text-white shadow-md transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-95"
             >
-              <Sparkles className="h-4 w-4" />
+              <Sparkles className="h-4 w-4 transition-transform duration-300 group-hover:rotate-12" />
               {showAI ? "收起 AI 填写" : "AI 智能填写"}
             </button>
           </div>
@@ -131,23 +134,23 @@ export default function QuestionnairePage() {
           )}
 
           {/* 当前维度卡片 */}
-          <div key={step} className="card animate-fade-up overflow-hidden">
-            <div className="flex items-center gap-4 border-b border-brand-100 bg-brand-50/60 p-6">
+          <div key={step} className="card card-accent animate-fade-up overflow-hidden">
+            <div className="flex items-center gap-4 border-b border-brand-100 bg-gradient-to-r from-brand-50/80 to-white p-6">
               <div
-                className={`flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br ${currentDim.color} text-white shadow-md`}
+                className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${currentDim.color} text-white shadow-lg`}
               >
-                <currentDim.icon className="h-7 w-7" />
+                <currentDim.icon className="h-8 w-8" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="rounded-full bg-brand-600 px-2.5 py-0.5 text-xs font-bold text-white">
+                  <span className="rounded-full bg-brand-600 px-3 py-1 text-xs font-bold text-white shadow-sm">
                     {currentDim.key}
                   </span>
                   <h2 className="text-xl font-bold text-ink-900">
                     {currentDim.title}
                   </h2>
                 </div>
-                <p className="mt-0.5 text-sm text-ink-600">
+                <p className="mt-1 text-sm text-ink-600">
                   {currentDim.name} · 权重 {currentDim.weight}
                 </p>
               </div>
