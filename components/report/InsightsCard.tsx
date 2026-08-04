@@ -1,11 +1,45 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Sparkles, Loader2, AlertCircle, RefreshCw } from "lucide-react";
 import type { AssessmentResult } from "@/lib/chli-model";
 
 interface Props {
   result: AssessmentResult;
+}
+
+/** 渲染行内 markdown（粗体 / 斜体），移除 ** 和 * 符号 */
+function renderInline(text: string): ReactNode {
+  const parts: ReactNode[] = [];
+  // 匹配 **bold** 或 *italic*
+  const regex = /(\*\*[^*]+\*\*|\*[^*]+\*)/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  let key = 0;
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index));
+    }
+    const token = match[0];
+    if (token.startsWith("**")) {
+      parts.push(
+        <strong key={key++} className="font-semibold text-ink-900">
+          {token.slice(2, -2)}
+        </strong>
+      );
+    } else {
+      parts.push(
+        <em key={key++} className="text-ink-900">
+          {token.slice(1, -1)}
+        </em>
+      );
+    }
+    lastIndex = match.index + token.length;
+  }
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+  return parts;
 }
 
 export function InsightsCard({ result }: Props) {
@@ -94,8 +128,9 @@ export function InsightsCard({ result }: Props) {
               {content.split("\n").map((line, i) => {
                 if (line.startsWith("## ")) {
                   return (
-                    <h4 key={i} className="pt-2 text-lg font-bold text-brand-700">
-                      {line.replace("## ", "")}
+                    <h4 key={i} className="flex items-center gap-2 pt-2 text-lg font-bold text-brand-700">
+                      <span className="h-5 w-1.5 rounded-full bg-brand-gradient" />
+                      {renderInline(line.replace("## ", ""))}
                     </h4>
                   );
                 }
@@ -105,24 +140,32 @@ export function InsightsCard({ result }: Props) {
                       key={i}
                       className="rounded-xl border-l-4 border-brand-300 bg-brand-50 px-4 py-3 text-sm text-ink-600"
                     >
-                      {line.replace("> ", "")}
+                      {renderInline(line.replace("> ", ""))}
                     </blockquote>
                   );
                 }
                 if (/^\d+\.\s/.test(line)) {
                   return (
-                    <div key={i} className="flex gap-2 pl-2 text-sm leading-relaxed text-ink-700">
-                      <span className="font-bold text-brand-600">
-                        {line.split(".")[0]}.
+                    <div key={i} className="flex gap-2.5 pl-2 text-sm leading-relaxed text-ink-700">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-100 text-[11px] font-bold text-brand-700">
+                        {line.split(".")[0]}
                       </span>
-                      <span>{line.replace(/^\d+\.\s/, "")}</span>
+                      <span>{renderInline(line.replace(/^\d+\.\s/, ""))}</span>
+                    </div>
+                  );
+                }
+                if (/^[-•]\s/.test(line)) {
+                  return (
+                    <div key={i} className="flex gap-2 pl-2 text-sm leading-relaxed text-ink-700">
+                      <span className="text-brand-500">•</span>
+                      <span>{renderInline(line.replace(/^[-•]\s/, ""))}</span>
                     </div>
                   );
                 }
                 if (line.trim() === "") return <div key={i} className="h-2" />;
                 return (
                   <p key={i} className="text-sm leading-relaxed text-ink-700">
-                    {line}
+                    {renderInline(line)}
                   </p>
                 );
               })}

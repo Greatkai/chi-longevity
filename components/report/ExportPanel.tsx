@@ -33,7 +33,7 @@ export function ExportPanel({ contentId, result }: Props) {
     setLoading(format);
     setMessage(null);
     try {
-      await exportReport(el, format);
+      await exportReport(el, format, result);
       setMessage({ type: "success", text: "导出成功，已开始下载" });
     } catch (e) {
       console.error("导出失败:", e);
