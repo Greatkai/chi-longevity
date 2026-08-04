@@ -13,12 +13,20 @@ const connectionString =
 
 // 全局单例连接池（serverless 冷启动复用）
 const globalForPg = globalThis as unknown as { __chiPgPool?: Pool };
+
+// Supabase（以及大多数云数据库）要求 SSL。
+// 若连接串包含 supabase.co 或显式开启 DATABASE_SSL，则启用 SSL。
+const useSsl =
+  process.env.DATABASE_SSL === "true" ||
+  connectionString.includes("supabase.co");
+
 export const pool =
   globalForPg.__chiPgPool ??
   new Pool({
     connectionString,
     max: Number(process.env.PGPOOL_MAX || 5),
-    ssl: process.env.DATABASE_SSL === "true" ? { rejectUnauthorized: false } : undefined,
+    connectionTimeoutMillis: 15000,
+    ssl: useSsl ? { rejectUnauthorized: false } : undefined,
   });
 
 if (process.env.NODE_ENV !== "production") {
