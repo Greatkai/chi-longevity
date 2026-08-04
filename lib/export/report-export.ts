@@ -52,7 +52,7 @@ export async function exportReport(
   const pdf = new jsPDF("p", "pt", "a4");
   pages.forEach((dataUrl, i) => {
     if (i > 0) pdf.addPage();
-    pdf.addImage(dataUrl, "PNG", 0, 0, 794, 1123);
+    pdf.addImage(dataUrl, "JPEG", 0, 0, 794, 1123);
   });
   pdf.save(`${filename}.pdf`);
 }
@@ -102,9 +102,9 @@ export async function exportShareImage(
   siteUrl = "https://chi-longevity.bmaxkai.me"
 ): Promise<void> {
   const W = 750;
-  const headerH = 360; // 加大顶部渐变区，确保布局不重叠
+  const headerH = 460; // 顶部留足空间放指数 + 金句
   const bodyH = 560;
-  const footerH = 320;
+  const footerH = 340;
   const H = headerH + bodyH + footerH;
 
   const canvas = document.createElement("canvas");
@@ -117,7 +117,7 @@ export async function exportShareImage(
   const score = Math.round(result.chliScore);
   const dims = result.dimensions;
 
-  /* ---------- 顶部渐变区 ---------- */
+  /* ---------- 顶部渐变区（品牌 + 综合指数 + 分享金句） ---------- */
   const grad = ctx.createLinearGradient(0, 0, W, headerH);
   grad.addColorStop(0, "#042A4D");
   grad.addColorStop(0.45, "#0A5BA8");
@@ -125,50 +125,57 @@ export async function exportShareImage(
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, W, headerH);
 
-  // 品牌徽标（胶囊）
-  ctx.save();
-  ctx.shadowColor = "rgba(0,0,0,0.2)";
-  ctx.shadowBlur = 10;
+  // 品牌徽标
   ctx.fillStyle = "rgba(255,255,255,0.16)";
-  roundRect(ctx, W / 2 - 180, 50, 360, 50, 25);
+  roundRect(ctx, W / 2 - 195, 50, 390, 52, 26);
   ctx.fill();
-  ctx.restore();
   ctx.fillStyle = "#FFFFFF";
   ctx.font = "600 26px 'PingFang SC','Microsoft YaHei',sans-serif";
   ctx.textAlign = "center";
-  ctx.fillText("百岁白皮书 · 长寿指数评估", W / 2, 84);
+  ctx.fillText("🏥 百岁白皮书 · 长寿指数评估", W / 2, 84);
 
+  ctx.fillStyle = "rgba(255,255,255,0.8)";
+  ctx.font = "18px 'PingFang SC','Microsoft YaHei',sans-serif";
+  ctx.fillText("中国百岁健康标准指数（CHLI）", W / 2, 120);
+
+  // 综合指数标签
   ctx.fillStyle = "rgba(255,255,255,0.85)";
-  ctx.font = "20px 'PingFang SC','Microsoft YaHei',sans-serif";
-  ctx.fillText("中国百岁健康标准指数（CHLI）", W / 2, 124);
-
-  // 综合指数标题
-  ctx.fillStyle = "rgba(255,255,255,0.92)";
   ctx.font = "600 22px 'PingFang SC','Microsoft YaHei',sans-serif";
   ctx.fillText("综合长寿指数", W / 2, 170);
 
-  // 综合指数大数字（居中布局，整组数字+斜杠视觉居中）
-  ctx.font = "800 110px 'PingFang SC','Microsoft YaHei',sans-serif";
+  // 大数字（精确居中）
+  ctx.font = "800 120px 'PingFang SC','Microsoft YaHei',sans-serif";
   const scoreText = String(score);
   const scoreW = ctx.measureText(scoreText).width;
-  ctx.font = "500 32px 'PingFang SC','Microsoft YaHei',sans-serif";
+  ctx.font = "500 34px 'PingFang SC','Microsoft YaHei',sans-serif";
   const slashW = ctx.measureText("/ 100").width;
-  const totalW = scoreW + 12 + slashW;
+  const totalW = scoreW + 14 + slashW;
   const startX = (W - totalW) / 2;
-  ctx.font = "800 110px 'PingFang SC','Microsoft YaHei',sans-serif";
+  ctx.font = "800 120px 'PingFang SC','Microsoft YaHei',sans-serif";
   ctx.fillStyle = "#FFFFFF";
-  ctx.fillText(scoreText, startX, 280);
-  ctx.font = "500 32px 'PingFang SC','Microsoft YaHei',sans-serif";
+  ctx.fillText(scoreText, startX, 290);
+  ctx.font = "500 34px 'PingFang SC','Microsoft YaHei',sans-serif";
   ctx.fillStyle = "rgba(255,255,255,0.85)";
-  ctx.fillText("/ 100", startX + scoreW + 12, 270);
+  ctx.fillText("/ 100", startX + scoreW + 14, 278);
 
   // 等级标签
   ctx.fillStyle = levelColor;
-  roundRect(ctx, W / 2 - 80, 300, 160, 42, 21);
+  roundRect(ctx, W / 2 - 110, 318, 220, 48, 24);
   ctx.fill();
   ctx.fillStyle = "#FFFFFF";
-  ctx.font = "700 20px 'PingFang SC','Microsoft YaHei',sans-serif";
-  ctx.fillText(`健康等级：${result.label}`, W / 2, 328);
+  ctx.font = "700 22px 'PingFang SC','Microsoft YaHei',sans-serif";
+  ctx.fillText(`健康等级 · ${result.label}`, W / 2, 350);
+
+  // 分享金句（个性化鼓励）
+  const quote = pickShareQuote(result);
+  ctx.fillStyle = "rgba(255,255,255,0.92)";
+  ctx.font = "italic 22px 'PingFang SC','Microsoft YaHei',sans-serif";
+  ctx.fillText(`「 ${quote} 」`, W / 2, 408);
+
+  // 引导语
+  ctx.fillStyle = "rgba(255,255,255,0.75)";
+  ctx.font = "17px 'PingFang SC','Microsoft YaHei',sans-serif";
+  ctx.fillText("—— 测一测你的长寿指数，扫码测一测 ——", W / 2, 440);
 
   /* ---------- 内容主体 ---------- */
   ctx.fillStyle = "#F0F6FC";
@@ -190,10 +197,10 @@ export async function exportShareImage(
   ctx.textAlign = "left";
   ctx.fillText("六大维度得分", 56, headerH + 78);
 
-  // 维度条形布局：给维度名足够空间
-  const labelW = 200; // 维度名+键的宽度
-  const barStartX = 56 + labelW + 24; // 维度名后留 24px 间距
-  const scoreW2 = 80; // 分数宽度
+  // 维度条形布局：给维度名足够宽度，不用 maxWidth（避免被丢弃）
+  const labelW = 280; // 足够容纳最长名称
+  const barStartX = 56 + labelW + 24;
+  const scoreW2 = 70;
   const barW = W - 56 * 2 - labelW - 24 - scoreW2;
   const rowH = 70;
   const startY = headerH + 116;
@@ -202,11 +209,11 @@ export async function exportShareImage(
     const s = Math.round(d.score);
     const y = startY + i * rowH;
 
-    // 维度名（限定宽度内）
+    // 维度名（直接绘制，不用 maxWidth）
     ctx.fillStyle = "#12232E";
     ctx.font = "600 22px 'PingFang SC','Microsoft YaHei',sans-serif";
     ctx.textAlign = "left";
-    ctx.fillText(`${d.key} · ${d.name}`, 56, y, labelW);
+    ctx.fillText(`${d.key} · ${d.name}`, 56, y);
 
     // 条形背景
     ctx.fillStyle = "#DCE9F8";
@@ -230,10 +237,10 @@ export async function exportShareImage(
   ctx.fillStyle = "#F0F6FC";
   ctx.fillRect(0, headerH + bodyH, W, footerH);
   ctx.fillStyle = "#FFFFFF";
-  roundRect(ctx, 100, headerH + bodyH + 30, W - 200, footerH - 80, 18);
+  roundRect(ctx, 80, headerH + bodyH + 36, W - 160, footerH - 92, 18);
   ctx.fill();
 
-  // 加载二维码图片并绘制
+  // 二维码
   const qrUrl = `${siteUrl}/questionnaire`;
   const qrDataUrl = await QRCode.toDataURL(qrUrl, {
     width: 240,
@@ -247,27 +254,28 @@ export async function exportShareImage(
     qrImg.src = qrDataUrl;
   });
 
-  const qrY = headerH + bodyH + 58;
-  ctx.drawImage(qrImg, 130, qrY, 200, 200);
+  const qrY = headerH + bodyH + 64;
+  ctx.drawImage(qrImg, 110, qrY, 200, 200);
 
   ctx.textAlign = "left";
   ctx.fillStyle = "#0A5BA8";
-  ctx.font = "700 28px 'PingFang SC','Microsoft YaHei',sans-serif";
-  ctx.fillText("扫码立即测试评估", 360, qrY + 56);
-
-  ctx.fillStyle = "#8494A6";
-  ctx.font = "20px 'PingFang SC','Microsoft YaHei',sans-serif";
-  ctx.fillText("百岁白皮书 · CHLI 长寿评估", 360, qrY + 96);
+  ctx.font = "700 30px 'PingFang SC','Microsoft YaHei',sans-serif";
+  ctx.fillText("扫码立即测试", 340, qrY + 60);
 
   ctx.fillStyle = "#55677A";
-  ctx.font = "18px 'PingFang SC','Microsoft YaHei',sans-serif";
-  wrapText(ctx, qrUrl, 360, qrY + 134, W - 360 - 60, 26);
+  ctx.font = "20px 'PingFang SC','Microsoft YaHei',sans-serif";
+  ctx.fillText("你也来测一测自己的", 340, qrY + 96);
+  ctx.fillText("健康寿命指数", 340, qrY + 124);
+
+  ctx.fillStyle = "#8494A6";
+  ctx.font = "17px 'PingFang SC','Microsoft YaHei',sans-serif";
+  wrapText(ctx, qrUrl, 340, qrY + 154, W - 340 - 50, 24);
 
   // 免责声明
   ctx.fillStyle = "#8494A6";
-  ctx.font = "18px 'PingFang SC','Microsoft YaHei',sans-serif";
+  ctx.font = "17px 'PingFang SC','Microsoft YaHei',sans-serif";
   ctx.textAlign = "center";
-  ctx.fillText("健康数据仅供参考，不构成医疗建议 · 请及时就医", W / 2, headerH + bodyH + footerH - 30);
+  ctx.fillText("健康数据仅供参考，不构成医疗建议 · 请及时就医", W / 2, headerH + bodyH + footerH - 32);
 
   // 导出
   const dataUrl = canvas.toDataURL("image/png");
@@ -277,11 +285,20 @@ export async function exportShareImage(
   link.click();
 }
 
+/** 根据综合指数与等级挑选一条分享金句 */
+function pickShareQuote(r: AssessmentResult): string {
+  if (r.level === "excellent") return "健康长寿，由点滴积累而成";
+  if (r.level === "good") return "今天的好习惯，是明天的健康资产";
+  if (r.level === "moderate") return "读懂身体信号，开启改善之旅";
+  if (r.level === "highRisk") return "健康管理，从一次评估开始";
+  return "好的身体，是最值得投资的长寿";
+}
+
 /* ==================== A4 PDF 排版（Canvas 绘制） ==================== */
 
 const A4W = 794;
 const A4H = 1123;
-const SCALE = 2; // 高清
+const SCALE = 1.5; // 平衡清晰度与文件体积
 
 /** 创建一个 A4 比例的画布 */
 function createA4Canvas(): { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D } {
@@ -483,7 +500,7 @@ export async function generateA4Pages(
     ctx.textAlign = "center";
     ctx.fillText("本报告由系统自动生成，仅供参考，不构成医疗诊断建议 · 如有健康问题请及时就医", A4W / 2, A4H - 30);
 
-    pages.push(canvas.toDataURL("image/png"));
+    pages.push(canvas.toDataURL("image/jpeg", 0.9));
   }
 
   /* ========== 第 2 页：维度得分 + 优势/关注 ========== */
@@ -493,7 +510,7 @@ export async function generateA4Pages(
     ctx.fillRect(0, 0, A4W, A4H);
     drawHeader(ctx, "六大维度得分", "各维度得分与风险等级（满分 100 分）", 2);
 
-    const labelW = 180; // 维度名宽度
+    const labelW = 220; // 维度名宽度，给足空间
     const barStartX = 48 + labelW + 20;
     const scoreW = 70;
     const barW = A4W - 48 * 2 - labelW - 20 - scoreW;
@@ -552,7 +569,7 @@ export async function generateA4Pages(
     wrapText(ctx, `相对薄弱的维度是「${weak.name}」（${weak.score.toFixed(1)} 分），建议优先改善以提升整体指数。`, 48, y + 30, A4W - 96, 26);
 
     drawFooter(ctx, 2);
-    pages.push(canvas.toDataURL("image/png"));
+    pages.push(canvas.toDataURL("image/jpeg", 0.9));
   }
 
   /* ========== 第 3 页：改善建议 + 解读 ========== */
@@ -608,7 +625,7 @@ export async function generateA4Pages(
     }
 
     drawFooter(ctx, 3);
-    pages.push(canvas.toDataURL("image/png"));
+    pages.push(canvas.toDataURL("image/jpeg", 0.9));
   }
 
   return pages;
