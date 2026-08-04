@@ -46,7 +46,16 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (e) {
-    console.error("注册失败:", e);
-    return NextResponse.json({ error: "注册失败，请稍后重试" }, { status: 500 });
+    console.error("注册失败:", (e as Error).message || e);
+    const msg = (e as Error).message || "";
+    // 将数据库连接错误返回给前端，便于诊断
+    const detail = msg.includes("connect") || msg.includes("ECONNREFUSED")
+      ? "数据库连接失败，请检查配置"
+      : msg.includes("password") || msg.includes("authenticat")
+      ? "数据库密码错误"
+      : msg.includes("SSL") || msg.includes("ssl")
+      ? "数据库 SSL 配置错误"
+      : "注册失败，请稍后重试";
+    return NextResponse.json({ error: detail }, { status: 500 });
   }
 }

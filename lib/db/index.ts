@@ -25,7 +25,8 @@ export const pool =
   new Pool({
     connectionString,
     max: Number(process.env.PGPOOL_MAX || 5),
-    connectionTimeoutMillis: 15000,
+    connectionTimeoutMillis: 5000,
+    idleTimeoutMillis: 30000,
     ssl: useSsl ? { rejectUnauthorized: false } : undefined,
   });
 
