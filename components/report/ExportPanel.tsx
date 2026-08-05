@@ -40,10 +40,21 @@ export function ExportPanel({ result }: Props) {
     setMessage(null);
     try {
       const siteUrl = typeof window !== "undefined" ? window.location.origin : "";
+      // 获取健康管理师人工解读（如有），作为 PDF 总结页
+      let coachInterpretation = "";
+      if (result.reportCode) {
+        try {
+          const res = await fetch(`/api/coach/interpretation?code=${encodeURIComponent(result.reportCode)}`);
+          const json = await res.json();
+          coachInterpretation = json?.coachInterpretation || "";
+        } catch {
+          coachInterpretation = "";
+        }
+      }
       // 动态导入 jsPDF 和 PDF 生成函数（避免 SSR 问题）
       const { jsPDF } = await import("jspdf");
       const { generateA4Pages } = await import("@/lib/export/report-export");
-      const pages = await generateA4Pages(result, siteUrl);
+      const pages = await generateA4Pages(result, siteUrl, coachInterpretation);
       const pdf = new jsPDF("p", "pt", "a4");
       // A4 纸张实际尺寸 595×842pt，图片缩放适配纸张
       pages.forEach((dataUrl, i) => {

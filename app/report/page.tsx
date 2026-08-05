@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -31,12 +31,44 @@ export default function ReportPage() {
   const { user } = useAuth();
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
+  // 记录是否已自动保存，避免重复保存
+  const autoSavedRef = useRef(false);
 
   useEffect(() => {
     if (!result) {
       router.replace("/questionnaire");
     }
   }, [result, router]);
+
+  // 登录用户：生成报告后默认自动保存
+  useEffect(() => {
+    if (!result || !user || autoSavedRef.current) return;
+    if (user.role === "user" || user.role === "admin" || user.role === "health_coach") {
+      autoSavedRef.current = true;
+      setSaveMsg(null);
+      (async () => {
+        try {
+          const res = await fetch("/api/reports", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              chliScore: result.chliScore,
+              level: result.level,
+              payload: result,
+            }),
+          });
+          const data = await res.json();
+          if (res.ok) {
+            setSaveMsg("报告已自动保存到「我的报告」");
+          } else {
+            setSaveMsg(data.error || "自动保存失败，可手动保存");
+          }
+        } catch {
+          setSaveMsg("自动保存失败，可手动保存");
+        }
+      })();
+    }
+  }, [result, user]);
 
   if (!result) {
     return (
@@ -106,10 +138,20 @@ export default function ReportPage() {
             </button>
           </div>
           <div className="flex items-center gap-3">
-            <button onClick={handleSave} disabled={saving} className="btn-secondary">
-              <Save className="h-5 w-5" />
-              {saving ? "保存中..." : user ? "保存报告" : "登录保存"}
-            </button>
+            {user ? (
+              <span className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
+                <Save className="h-4 w-4" />
+                {autoSavedRef.current ? "已自动保存" : "保存中..."}
+              </span>
+            ) : (
+              <button
+                onClick={() => router.push("/login?next=/report")}
+                className="btn-secondary"
+              >
+                <Save className="h-5 w-5" />
+                登录后自动保存
+              </button>
+            )}
             <a href="#export" className="btn-primary">
               <Download className="h-5 w-5" />
               导出报告
@@ -250,6 +292,13 @@ export default function ReportPage() {
           </div>
         </div>
 
+        {/* 健康管理师人工解读（关键解读，紧跟在综合得分下方） */}
+        {result.reportCode && (
+          <div className="mt-8">
+            <CoachInterpretation reportCode={result.reportCode} />
+          </div>
+        )}
+
         {/* 风险卡片 */}
         <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {result.dimensions.map((d) => {
@@ -335,13 +384,6 @@ export default function ReportPage() {
         <div className="mt-8">
           <InsightsCard result={result} />
         </div>
-
-        {/* 健康管理师人工解读 */}
-        {result.reportCode && (
-          <div className="mt-8">
-            <CoachInterpretation reportCode={result.reportCode} />
-          </div>
-        )}
 
         {/* FSHI 附加模块 */}
         {result.fshi && (

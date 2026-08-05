@@ -575,7 +575,8 @@ function drawTableRow(
 /** 生成 A4 文档式排版的多页图片 */
 export async function generateA4Pages(
   result?: AssessmentResult,
-  siteUrl = ""
+  siteUrl = "",
+  coachInterpretation?: string
 ): Promise<string[]> {
   if (!result) return [];
   const meta = RISK_META[result.level];
@@ -584,7 +585,8 @@ export async function generateA4Pages(
   const dims = result.dimensions;
   const dateStr = new Date(result.createdAt || Date.now()).toLocaleDateString("zh-CN");
   const pages: string[] = [];
-  const TOTAL = 5;
+  // 总页数 = 5 基础页 + (有管理师解读则 +1 总结页)
+  const TOTAL = 5 + (coachInterpretation ? 1 : 0);
 
   /* ========== 第 1 页：封面 ========== */
   {
@@ -936,5 +938,52 @@ export async function generateA4Pages(
     pages.push(canvas.toDataURL("image/jpeg", 0.92));
   }
 
+  /* ========== 第 6 页：健康管理师总结（如有人工解读） ========== */
+  if (coachInterpretation && coachInterpretation.trim()) {
+    const { canvas, ctx } = createA4Canvas();
+    ctx.fillStyle = "#FFFFFF";
+    ctx.fillRect(0, 0, A4W, A4H);
+    drawDocHeader(ctx);
+
+    let y = 80;
+    y = drawSectionTitle(ctx, "五", "健康管理师总结", y);
+    y = drawParagraph(ctx, "以下为健康管理师对本报告的人工解读与综合建议：", y + 6);
+    y += 10;
+
+    // 简化 markdown：去掉标记符号，按段落绘制
+    const text = stripMarkdown(coachInterpretation);
+    const lines = text.split("\n");
+    for (const line of lines) {
+      if (y > A4H - 150) break;
+      if (line.trim() === "") {
+        y += 12;
+      } else {
+        ctx.fillStyle = "#2B3A48";
+        ctx.font = "12px 'PingFang SC','Microsoft YaHei',sans-serif";
+        ctx.textAlign = "left";
+        ctx.textBaseline = "alphabetic";
+        y = wrapText(ctx, line, MARGIN, y, A4W - MARGIN * 2, 20);
+        y += 8;
+      }
+    }
+
+    drawDocFooter(ctx, 6, TOTAL, dateStr);
+    pages.push(canvas.toDataURL("image/jpeg", 0.92));
+  }
+
   return pages;
+}
+
+/** 简化 Markdown：移除标记符号，转为纯文本 */
+function stripMarkdown(md: string): string {
+  return md
+    .replace(/\*\*([^*]+)\*\*/g, "$1")
+    .replace(/\*([^*]+)\*/g, "$1")
+    .replace(/^#{1,6}\s+/gm, "")
+    .replace(/^>\s+/gm, "")
+    .replace(/^[-*]\s+/gm, "• ")
+    .replace(/^\d+\.\s+/gm, "")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/!\[.*?\]\(.*?\)/g, "")
+    .replace(/\[(.*?)\]\(.*?\)/g, "$1");
 }
