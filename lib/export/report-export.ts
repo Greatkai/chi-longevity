@@ -465,7 +465,7 @@ export async function generateA4Pages(
   const dims = result.dimensions;
   const dateStr = new Date(result.createdAt || Date.now()).toLocaleDateString("zh-CN");
   const pages: string[] = [];
-  const TOTAL = 4;
+  const TOTAL = 5;
 
   /* ========== 第 1 页：封面 ========== */
   {
@@ -707,25 +707,18 @@ export async function generateA4Pages(
     y = drawParagraph(ctx, "基于您的评估结果，以下是为您生成的重点行动建议，建议以 90 天为一个改善周期执行：", y + 6);
     y += 8;
 
+    // 提取改善建议列表（from insights）
     const insights = generateRuleInsights(result);
     const lines = insights.split("\n");
-    let inTips = false;
     let tipNum = 0;
     for (const line of lines) {
-      if (y > A4H - 180) break;
-      if (line.startsWith("## 改善建议")) {
-        inTips = true;
+      if (y > A4H - 160) break;
+      if (line.startsWith("## 改善建议")) continue;
+      if (line.startsWith("## ")) {
+        if (tipNum > 0) break; // 建议之后的其他章节放到下一页
         continue;
       }
-      if (line.startsWith("## 健康展望")) {
-        // 进入 AI 解读章节
-        y += 16;
-        y = drawSectionTitle(ctx, "四", "AI 智能解读", y - 12);
-        y = drawParagraph(ctx, "以下是系统基于您的评估结果生成的智能解读分析：", y + 6);
-        y += 8;
-        continue;
-      }
-      if (inTips && /^\d+\.\s/.test(line)) {
+      if (/^\d+\.\s/.test(line)) {
         tipNum++;
         const text = line.replace(/^\d+\.\s/, "");
         ctx.fillStyle = "#0A5BA8";
@@ -742,63 +735,80 @@ export async function generateA4Pages(
         ctx.textAlign = "left";
         ctx.textBaseline = "alphabetic";
         y = wrapText(ctx, text, MARGIN + 32, y, A4W - MARGIN * 2 - 32, 22);
-        y += 10;
-      } else if (line.startsWith("## ")) {
-        y += 10;
-        ctx.fillStyle = "#0A5BA8";
-        ctx.font = "700 15px 'PingFang SC','Microsoft YaHei',sans-serif";
-        ctx.textAlign = "left";
-        ctx.textBaseline = "alphabetic";
-        ctx.fillText(line.replace("## ", ""), MARGIN, y);
-        y += 22;
-      } else if (line.startsWith("> ")) {
+        y += 12;
+      }
+    }
+
+    drawDocFooter(ctx, 4, TOTAL, dateStr);
+    pages.push(canvas.toDataURL("image/jpeg", 0.92));
+  }
+
+  /* ========== 第 5 页：AI 智能解读 ========== */
+  {
+    const { canvas, ctx } = createA4Canvas();
+    ctx.fillStyle = "#FFFFFF";
+    ctx.fillRect(0, 0, A4W, A4H);
+    drawDocHeader(ctx);
+
+    let y = 80;
+    y = drawSectionTitle(ctx, "四", "AI 智能解读", y);
+    y = drawParagraph(ctx, "以下是系统基于您的评估结果生成的智能解读与健康展望：", y + 6);
+    y += 10;
+
+    const insights = generateRuleInsights(result);
+    const lines = insights.split("\n");
+    let startAI = false;
+    for (const line of lines) {
+      if (y > A4H - 150) break;
+      // 从「健康展望」章节开始渲染 AI 解读内容
+      if (line.startsWith("## 健康展望")) { startAI = true; continue; }
+      if (!startAI) continue;
+      if (line.startsWith("> ")) {
         y += 4;
         ctx.fillStyle = "#8494A6";
         ctx.font = "12px 'PingFang SC','Microsoft YaHei',sans-serif";
         y = wrapText(ctx, line.replace("> ", ""), MARGIN + 16, y, A4W - MARGIN * 2 - 16, 20);
         y += 8;
+      } else if (line.trim() === "") {
+        y += 12;
       } else if (line.startsWith("- ")) {
         ctx.fillStyle = "#55677A";
         ctx.font = "13px 'PingFang SC','Microsoft YaHei',sans-serif";
         ctx.fillText("•", MARGIN + 8, y);
         y = wrapText(ctx, line.replace("- ", ""), MARGIN + 24, y, A4W - MARGIN * 2 - 24, 22);
         y += 6;
-      } else if (line.trim() === "") {
-        y += 10;
       } else {
         y = drawParagraph(ctx, line, y, false);
-        y += 6;
+        y += 8;
       }
     }
 
     // 底部二维码
-    if (y < A4H - 160) {
-      const qrUrl = `${siteUrl}/questionnaire`;
-      const qrDataUrl = await QRCode.toDataURL(qrUrl, {
-        width: 160,
-        margin: 1,
-        color: { dark: "#063D70", light: "#FFFFFF" },
-      });
-      const qrImg = new Image();
-      await new Promise<void>((resolve) => {
-        qrImg.onload = () => resolve();
-        qrImg.onerror = () => resolve();
-        qrImg.src = qrDataUrl;
-      });
-      const qrY = A4H - 130;
-      ctx.drawImage(qrImg, MARGIN, qrY, 80, 80);
-      ctx.fillStyle = "#0A5BA8";
-      ctx.font = "700 14px 'PingFang SC','Microsoft YaHei',sans-serif";
-      ctx.textAlign = "left";
-      ctx.textBaseline = "alphabetic";
-      ctx.fillText("扫码立即测试评估", MARGIN + 96, qrY + 30);
-      ctx.fillStyle = "#8494A6";
-      ctx.font = "11px 'PingFang SC','Microsoft YaHei',sans-serif";
-      ctx.fillText("你也来测一测自己的健康寿命指数", MARGIN + 96, qrY + 52);
-      ctx.fillText(qrUrl, MARGIN + 96, qrY + 70);
-    }
+    const qrUrl = `${siteUrl}/questionnaire`;
+    const qrDataUrl = await QRCode.toDataURL(qrUrl, {
+      width: 160,
+      margin: 1,
+      color: { dark: "#063D70", light: "#FFFFFF" },
+    });
+    const qrImg = new Image();
+    await new Promise<void>((resolve) => {
+      qrImg.onload = () => resolve();
+      qrImg.onerror = () => resolve();
+      qrImg.src = qrDataUrl;
+    });
+    const qrY = A4H - 130;
+    ctx.drawImage(qrImg, MARGIN, qrY, 80, 80);
+    ctx.fillStyle = "#0A5BA8";
+    ctx.font = "700 14px 'PingFang SC','Microsoft YaHei',sans-serif";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
+    ctx.fillText("扫码立即测试评估", MARGIN + 96, qrY + 30);
+    ctx.fillStyle = "#8494A6";
+    ctx.font = "11px 'PingFang SC','Microsoft YaHei',sans-serif";
+    ctx.fillText("你也来测一测自己的健康寿命指数", MARGIN + 96, qrY + 52);
+    ctx.fillText(qrUrl, MARGIN + 96, qrY + 70);
 
-    drawDocFooter(ctx, 4, TOTAL, dateStr);
+    drawDocFooter(ctx, 5, TOTAL, dateStr);
     pages.push(canvas.toDataURL("image/jpeg", 0.92));
   }
 
