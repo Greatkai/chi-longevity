@@ -140,6 +140,8 @@ export interface SubIndicator {
   needsLab: boolean;
   /** 说明 */
   desc: string;
+  /** 具体评分规则（值域→得分的映射说明，供“详细计算逻辑”展示） */
+  rule?: string;
 }
 
 /* ------------------------- 维度得分模型 ------------------------- */

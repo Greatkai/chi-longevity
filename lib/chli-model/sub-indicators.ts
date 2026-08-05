@@ -7,45 +7,45 @@ import type { SubIndicator } from "./types";
  */
 export const SUB_INDICATORS: SubIndicator[] = [
   /* -------- B 生物年龄 -------- */
-  { key: "B1", dimension: "B", name: "生物年龄差值", weight: 0.4, needsLab: false, desc: "基于生物标志物测算的生物年龄与实际年龄的差值" },
-  { key: "B2", dimension: "B", name: "表观遗传/衰老时钟", weight: 0.25, needsLab: true, desc: "第3代衰老时钟，基于 DNA 甲基化等分子标志" },
-  { key: "B3", dimension: "B", name: "炎症负荷", weight: 0.2, needsLab: true, desc: "hs-CRP、IL-6、TNF-α 等炎症标志物" },
-  { key: "B4", dimension: "B", name: "免疫年龄/免疫功能", weight: 0.15, needsLab: false, desc: "免疫细胞亚群与免疫应答能力" },
+  { key: "B1", dimension: "B", name: "生物年龄差值", weight: 0.4, needsLab: false, desc: "基于生物标志物测算的生物年龄与实际年龄的差值", rule: "得分 = 60 − 年龄差×2.5。年龄差越负（生物年龄越年轻）分越高；生物年龄比实际年轻 4 岁约得 80 分，年轻 10 岁约 100 分。" },
+  { key: "B2", dimension: "B", name: "表观遗传/衰老时钟", weight: 0.25, needsLab: true, desc: "第3代衰老时钟，基于 DNA 甲基化等分子标志", rule: "用 DNA 甲基化检测出的衰老年龄与实际年龄比较：衰老年龄越年轻分越高。未提供检测数据时，采用估算替代分（62 分）。" },
+  { key: "B3", dimension: "B", name: "炎症负荷", weight: 0.2, needsLab: true, desc: "hs-CRP、IL-6、TNF-α 等炎症标志物", rule: "以 hs-CRP 为例：<1.0 mg/L 得 90 分以上，1.0-3.0 得 60-90 分，>3.0 得 60 分以下。未提供时用估算分（65 分）。" },
+  { key: "B4", dimension: "B", name: "免疫年龄/免疫功能", weight: 0.15, needsLab: false, desc: "免疫细胞亚群与免疫应答能力", rule: "按自评 1-5 分映射：1 分=很差(0 分)，3 分=一般(50 分)，5 分=很好(100 分)。" },
 
   /* -------- F 功能健康 -------- */
-  { key: "F1", dimension: "F", name: "日常活动能力", weight: 0.25, needsLab: false, desc: "ADL/IADL 日常生活自理与工具性活动" },
-  { key: "F2", dimension: "F", name: "步速/步行能力", weight: 0.2, needsLab: true, desc: "步速测试、6 分钟步行试验" },
-  { key: "F3", dimension: "F", name: "握力/肌肉力量", weight: 0.2, needsLab: true, desc: "握力计测量、上肢肌力" },
-  { key: "F4", dimension: "F", name: "平衡能力/跌倒风险", weight: 0.15, needsLab: true, desc: "单腿站立、Berg 平衡量表" },
-  { key: "F5", dimension: "F", name: "认知功能", weight: 0.2, needsLab: true, desc: "MoCA/MMSE 认知筛查量表" },
+  { key: "F1", dimension: "F", name: "日常活动能力", weight: 0.25, needsLab: false, desc: "ADL/IADL 日常生活自理与工具性活动", rule: "按自评 1-5 分映射：5 分=完全自理(100 分)，3 分=基本自理(50 分)，1 分=需要帮助(0 分)。" },
+  { key: "F2", dimension: "F", name: "步速/步行能力", weight: 0.2, needsLab: true, desc: "步速测试、6 分钟步行试验", rule: "步速(m/s)在 0.6-1.4 间线性映射到 0-100 分；1.4m/s 以上得满分。未提供时用估算分（70 分）。" },
+  { key: "F3", dimension: "F", name: "握力/肌肉力量", weight: 0.2, needsLab: true, desc: "握力计测量、上肢肌力", rule: "握力(kg)在 15-40 间线性映射；40kg 以上得满分。未提供时用估算分（70 分）。" },
+  { key: "F4", dimension: "F", name: "平衡能力/跌倒风险", weight: 0.15, needsLab: true, desc: "单腿站立、Berg 平衡量表", rule: "按测试评分 1-5 分映射；5 分=平衡良好(100 分)。未提供时用估算分（70 分）。" },
+  { key: "F5", dimension: "F", name: "认知功能", weight: 0.2, needsLab: true, desc: "MoCA/MMSE 认知筛查量表", rule: "MoCA 得分(满分 30)在 18-28 间线性映射；≥28 分约满分。未提供时用估算分（70 分）。" },
 
   /* -------- M 代谢与慢病 -------- */
-  { key: "M1", dimension: "M", name: "血糖代谢", weight: 0.25, needsLab: true, desc: "糖化血红蛋白 HbA1c、空腹血糖" },
-  { key: "M2", dimension: "M", name: "血脂与动脉粥样硬化", weight: 0.25, needsLab: true, desc: "LDL-C、ApoB、非 HDL-C" },
-  { key: "M3", dimension: "M", name: "血压与心血管风险", weight: 0.2, needsLab: true, desc: "收缩压/舒张压、脉压差" },
-  { key: "M4", dimension: "M", name: "体成分", weight: 0.15, needsLab: false, desc: "BMI、腰围、体脂率" },
-  { key: "M5", dimension: "M", name: "肝肾与基础慢病", weight: 0.15, needsLab: true, desc: "肝肾功能指标、慢病数量与控制" },
+  { key: "M1", dimension: "M", name: "血糖代谢", weight: 0.25, needsLab: true, desc: "糖化血红蛋白 HbA1c、空腹血糖", rule: "HbA1c：5.5% 得 100 分，8% 得 0 分，6.0% 约 80 分；无 HbA1c 时用空腹血糖 5.5-7.5 mmol/L 映射。" },
+  { key: "M2", dimension: "M", name: "血脂与动脉粥样硬化", weight: 0.25, needsLab: true, desc: "LDL-C、ApoB、非 HDL-C", rule: "LDL-C(mmol/L)：2.5 得 100 分，4.5 得 0 分，3.4 约 60 分。未提供时用估算分（62 分）。" },
+  { key: "M3", dimension: "M", name: "血压与心血管风险", weight: 0.2, needsLab: true, desc: "收缩压/舒张压、脉压差", rule: "收缩压 110-140 与舒张压 75-90 各自映射到 0-100 分，取平均；收缩压 110 得满分。" },
+  { key: "M4", dimension: "M", name: "体成分", weight: 0.15, needsLab: false, desc: "BMI、腰围、体脂率", rule: "BMI 18.5-24 得 100 分；24-28 得 75 分；<18.5 或 28-32 得 50 分；>32 得 25 分。" },
+  { key: "M5", dimension: "M", name: "肝肾与基础慢病", weight: 0.15, needsLab: true, desc: "肝肾功能指标、慢病数量与控制", rule: "肝肾功能正常计满分；无慢病再加分，每增加 1 种慢病减 20 分；慢病控制良好额外加分。" },
 
   /* -------- L 生活方式 -------- */
-  { key: "L1", dimension: "L", name: "运动水平", weight: 0.3, needsLab: false, desc: "规律运动频率与强度" },
-  { key: "L2", dimension: "L", name: "睡眠质量", weight: 0.25, needsLab: false, desc: "睡眠时长与质量" },
-  { key: "L3", dimension: "L", name: "饮食质量", weight: 0.25, needsLab: false, desc: "膳食均衡与地中海式饮食" },
-  { key: "L4", dimension: "L", name: "烟酒习惯", weight: 0.1, needsLab: false, desc: "吸烟与饮酒情况" },
-  { key: "L5", dimension: "L", name: "体重管理与依从性", weight: 0.1, needsLab: false, desc: "体重控制与健康行为依从" },
+  { key: "L1", dimension: "L", name: "运动水平", weight: 0.3, needsLab: false, desc: "规律运动频率与强度", rule: "每周中等强度运动 0-5 次线性映射；每周 5 次得满分。" },
+  { key: "L2", dimension: "L", name: "睡眠质量", weight: 0.25, needsLab: false, desc: "睡眠时长与质量", rule: "时长 7-8 小时得 100 分，6-9 小时 75 分，5-10 小时 50 分；再结合自评睡眠质量 1-5 分取平均。" },
+  { key: "L3", dimension: "L", name: "饮食质量", weight: 0.25, needsLab: false, desc: "膳食均衡与地中海式饮食", rule: "按自评 0-10 分映射到 0-100 分；10 分=非常均衡健康。" },
+  { key: "L4", dimension: "L", name: "烟酒习惯", weight: 0.1, needsLab: false, desc: "吸烟与饮酒情况", rule: "从不吸烟得 100 分，已戒烟 85 分，经常吸烟 20 分；从不饮酒 100 分，经常饮酒 30 分，取平均。" },
+  { key: "L5", dimension: "L", name: "体重管理与依从性", weight: 0.1, needsLab: false, desc: "体重控制与健康行为依从", rule: "按自评 1-5 分映射；5 分=严格管理体重。" },
 
   /* -------- P 心理认知 -------- */
-  { key: "P1", dimension: "P", name: "抑郁焦虑压力", weight: 0.25, needsLab: false, desc: "情绪状态与心理压力" },
-  { key: "P2", dimension: "P", name: "认知健康与记忆", weight: 0.25, needsLab: false, desc: "自我认知与记忆功能" },
-  { key: "P3", dimension: "P", name: "社会连接与孤独感", weight: 0.2, needsLab: false, desc: "孤独感与社会联结" },
-  { key: "P4", dimension: "P", name: "生活目标感/韧性", weight: 0.15, needsLab: false, desc: "目标感、心理韧性" },
-  { key: "P5", dimension: "P", name: "社交参与", weight: 0.15, needsLab: false, desc: "社会活动参与频率" },
+  { key: "P1", dimension: "P", name: "抑郁焦虑压力", weight: 0.25, needsLab: false, desc: "情绪状态与心理压力", rule: "按自评 1-5 分映射；5 分=情绪很好、压力很小。" },
+  { key: "P2", dimension: "P", name: "认知健康与记忆", weight: 0.25, needsLab: false, desc: "自我认知与记忆功能", rule: "按自评 1-5 分映射；5 分=记忆力很好。" },
+  { key: "P3", dimension: "P", name: "社会连接与孤独感", weight: 0.2, needsLab: false, desc: "孤独感与社会联结", rule: "反向计分：孤独感 1 分=没有(100 分)，5 分=经常孤独(0 分)。" },
+  { key: "P4", dimension: "P", name: "生活目标感/韧性", weight: 0.15, needsLab: false, desc: "目标感、心理韧性", rule: "按自评 1-5 分映射；5 分=目标明确、韧性强。" },
+  { key: "P5", dimension: "P", name: "社交参与", weight: 0.15, needsLab: false, desc: "社会活动参与频率", rule: "按参与频率 0-5 映射；5 分=每天参与社交。" },
 
   /* -------- D 数字健康轨迹 -------- */
-  { key: "D1", dimension: "D", name: "健康数据完整性", weight: 0.25, needsLab: false, desc: "连续健康数据的完整程度" },
-  { key: "D2", dimension: "D", name: "设备数据质量", weight: 0.2, needsLab: false, desc: "可穿戴设备数据质量" },
-  { key: "D3", dimension: "D", name: "指标改善趋势", weight: 0.25, needsLab: true, desc: "历史健康指标的改善趋势" },
-  { key: "D4", dimension: "D", name: "AI 风险预测", weight: 0.2, needsLab: true, desc: "基于 AI 的疾病风险预测结果" },
-  { key: "D5", dimension: "D", name: "管理依从性", weight: 0.1, needsLab: false, desc: "健康管理计划依从程度" },
+  { key: "D1", dimension: "D", name: "健康数据完整性", weight: 0.25, needsLab: false, desc: "连续健康数据的完整程度", rule: "按自评 0-10 分映射；10 分=长期规律记录健康数据。" },
+  { key: "D2", dimension: "D", name: "设备数据质量", weight: 0.2, needsLab: false, desc: "可穿戴设备数据质量", rule: "经常使用可穿戴设备得 100 分，偶尔 60 分，不使用 25 分。" },
+  { key: "D3", dimension: "D", name: "指标改善趋势", weight: 0.25, needsLab: true, desc: "历史健康指标的改善趋势", rule: "连续体检指标呈改善趋势得满分；未提供历史数据时用估算分（65 分）。" },
+  { key: "D4", dimension: "D", name: "AI 风险预测", weight: 0.2, needsLab: true, desc: "基于 AI 的疾病风险预测结果", rule: "AI 风险等级 1-5 分映射；风险越低分越高。无预测结果时用中性分（70 分）。" },
+  { key: "D5", dimension: "D", name: "管理依从性", weight: 0.1, needsLab: false, desc: "健康管理计划依从程度", rule: "按依从频率 0-5 映射；5 分=严格坚持健康管理计划。" },
 ];
 
 /** 按维度分组 */
