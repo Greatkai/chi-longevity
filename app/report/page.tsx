@@ -371,7 +371,7 @@ export default function ReportPage() {
 
         {/* 导出区 */}
         <div id="export" className="mt-8">
-          <ExportPanel contentId="report-export" result={result} />
+          <ExportPanel result={result} />
         </div>
       </div>
     </div>

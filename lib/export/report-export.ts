@@ -150,25 +150,15 @@ export async function exportShareImage(
   ctx.arc(W / 2, 270, 180, 0, Math.PI * 2);
   ctx.fill();
 
-  // 品牌徽标 + 医疗十字图标
+  // 品牌徽标（去掉医疗十字标，纯文字居中）
   ctx.fillStyle = "rgba(255,255,255,0.16)";
-  roundRect(ctx, W / 2 - 210, 50, 420, 56, 28);
+  roundRect(ctx, W / 2 - 200, 50, 400, 56, 28);
   ctx.fill();
-  const crossCX = W / 2 - 175;
-  const crossCY = 78;
-  ctx.fillStyle = "#FFFFFF";
-  ctx.beginPath();
-  ctx.arc(crossCX, crossCY, 16, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = "#0A5BA8";
-  ctx.fillRect(crossCX - 8, crossCY - 2.5, 16, 5);
-  ctx.fillRect(crossCX - 2.5, crossCY - 8, 5, 16);
-
   ctx.fillStyle = "#FFFFFF";
   ctx.font = "600 26px 'PingFang SC','Microsoft YaHei',sans-serif";
-  ctx.textAlign = "left";
+  ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillText("百岁白皮书 · 长寿指数评估", crossCX + 26, 79);
+  ctx.fillText("百岁白皮书 · 长寿指数评估", W / 2, 79);
 
   ctx.fillStyle = "rgba(255,255,255,0.8)";
   ctx.font = "18px 'PingFang SC','Microsoft YaHei',sans-serif";
@@ -491,19 +481,12 @@ export async function generateA4Pages(
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, A4W, 450);
 
-    // 品牌标识 + 医疗十字
-    ctx.fillStyle = "#FFFFFF";
-    ctx.beginPath();
-    ctx.arc(MARGIN + 12, 56, 14, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = "#0A5BA8";
-    ctx.fillRect(MARGIN + 4, 53, 16, 6);
-    ctx.fillRect(MARGIN + 9, 48, 6, 16);
+    // 品牌标识（去掉医疗十字，纯文字）
     ctx.fillStyle = "#FFFFFF";
     ctx.font = "600 16px 'PingFang SC','Microsoft YaHei',sans-serif";
     ctx.textAlign = "left";
     ctx.textBaseline = "alphabetic";
-    ctx.fillText("百岁白皮书 · CHLI", MARGIN + 36, 62);
+    ctx.fillText("百岁白皮书 · CHLI", MARGIN, 62);
     ctx.textAlign = "right";
     ctx.fillStyle = "rgba(255,255,255,0.8)";
     ctx.font = "13px 'PingFang SC','Microsoft YaHei',sans-serif";

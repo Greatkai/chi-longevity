@@ -7,9 +7,78 @@ interface Props {
   question: Question;
   value: number | null;
   onChange: (value: number | null) => void;
+  /** lab 类型：是否有该检查 */
+  available?: boolean;
+  onAvailableChange?: (available: boolean) => void;
 }
 
-export function QuestionField({ question, value, onChange }: Props) {
+export function QuestionField({
+  question,
+  value,
+  onChange,
+  available,
+  onAvailableChange,
+}: Props) {
+  // lab 类型：先选择是否有检查，有则输入数值
+  if (question.type === "lab") {
+    return (
+      <div className="space-y-4">
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => onAvailableChange?.(true)}
+            className={cn(
+              "rounded-xl border-2 px-4 py-2.5 text-sm font-medium transition-all",
+              available
+                ? "border-brand-500 bg-brand-50 text-brand-700 shadow-sm"
+                : "border-brand-100 bg-white text-ink-600 hover:border-brand-300"
+            )}
+          >
+            我有该检查报告
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              onAvailableChange?.(false);
+              onChange(null);
+            }}
+            className={cn(
+              "rounded-xl border-2 px-4 py-2.5 text-sm font-medium transition-all",
+              !available
+                ? "border-brand-500 bg-brand-50 text-brand-700 shadow-sm"
+                : "border-brand-100 bg-white text-ink-600 hover:border-brand-300"
+            )}
+          >
+            我没有 / 不清楚
+          </button>
+        </div>
+
+        {available && (
+          <div className="relative animate-fade-up">
+            <input
+              type="number"
+              min={question.min}
+              max={question.max}
+              step={question.step || 1}
+              value={value ?? ""}
+              onChange={(e) => {
+                const v = e.target.value;
+                onChange(v === "" ? null : parseFloat(v));
+              }}
+              placeholder="请输入检查结果数值"
+              className="input-base pr-20"
+            />
+            {question.suffix && (
+              <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm text-ink-400">
+                {question.suffix}
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   if (question.type === "radio") {
     return (
       <div className="grid gap-2 sm:grid-cols-2">

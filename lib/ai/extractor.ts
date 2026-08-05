@@ -7,17 +7,16 @@ export interface ExtractedData {
   bio: {
     actualAge: number | null;
     biologicalAge: number | null;
+    immunity: number | null;
   };
   functional: {
-    bodyFunction: number | null;
-    cognition: number | null;
-    selfCare: number | null;
-    exerciseDays: number | null;
+    adl: number | null;
   };
   metabolic: {
     bmi: number | null;
     systolicBP: number | null;
     diastolicBP: number | null;
+    hba1c: number | null;
     fastingGlucose: number | null;
     ldl: number | null;
     chronicCount: number | null;
@@ -30,30 +29,32 @@ export interface ExtractedData {
     weeklyExercise: number | null;
     smoking: number | null;
     alcohol: number | null;
+    weightManagement: number | null;
     stress: number | null;
   };
   psychosocial: {
     mood: number | null;
-    cognitiveActivity: number | null;
-    socialActivity: number | null;
+    cognitiveHealth: number | null;
     loneliness: number | null;
+    purpose: number | null;
+    socialActivity: number | null;
   };
   digital: {
     regularCheckup: number | null;
     wearable: number | null;
     recordContinuity: number | null;
-    monitorTimes: number | null;
+    adherence: number | null;
   };
 }
 
 export function emptyExtracted(): ExtractedData {
   return {
-    bio: { actualAge: null, biologicalAge: null },
-    functional: { bodyFunction: null, cognition: null, selfCare: null, exerciseDays: null },
-    metabolic: { bmi: null, systolicBP: null, diastolicBP: null, fastingGlucose: null, ldl: null, chronicCount: null, chronicControl: null },
-    lifestyle: { diet: null, sleepHours: null, sleepQuality: null, weeklyExercise: null, smoking: null, alcohol: null, stress: null },
-    psychosocial: { mood: null, cognitiveActivity: null, socialActivity: null, loneliness: null },
-    digital: { regularCheckup: null, wearable: null, recordContinuity: null, monitorTimes: null },
+    bio: { actualAge: null, biologicalAge: null, immunity: null },
+    functional: { adl: null },
+    metabolic: { bmi: null, systolicBP: null, diastolicBP: null, hba1c: null, fastingGlucose: null, ldl: null, chronicCount: null, chronicControl: null },
+    lifestyle: { diet: null, sleepHours: null, sleepQuality: null, weeklyExercise: null, smoking: null, alcohol: null, weightManagement: null, stress: null },
+    psychosocial: { mood: null, cognitiveHealth: null, loneliness: null, purpose: null, socialActivity: null },
+    digital: { regularCheckup: null, wearable: null, recordContinuity: null, adherence: null },
   };
 }
 
@@ -85,22 +86,12 @@ export function ruleBasedExtract(text: string): ExtractedData {
   // 年龄
   result.bio.actualAge = extractNumber(t, /(?:年龄|今年|岁数)[^\d]*(\d{2})/) ?? null;
   result.bio.biologicalAge = extractNumber(t, /(?:生物年龄|生理年龄)[^\d]*(\d{2})/) ?? null;
+  result.bio.immunity =
+    keywordScore(t, ["免疫力很差", "抵抗力差", "免疫力一般", "免疫力不错", "免疫力很好", "抵抗力强"], null);
 
   // 功能健康
-  result.functional.bodyFunction =
-    keywordScore(
-      t,
-      ["很差", "不好", "差", "一般", "不错", "很好", "非常好"],
-      null
-    );
-  result.functional.cognition =
-    keywordScore(t, ["记忆力很差", "记性差", "记性一般", "记性不错", "记性好", "记忆力很好"], null);
-  result.functional.selfCare =
-    keywordScore(t, ["无法自理", "需要帮助", "基本自理", "能自理", "完全自理"], null);
-  result.functional.exerciseDays =
-    extractNumber(t, /(?:每周|一周)[^\d]*(\d)[^\d]*(?:天|次)/) ??
-    extractNumber(t, /(\d)[^\d]*(?:天|次)[^\d]*(?:运动|锻炼)/) ??
-    null;
+  result.functional.adl =
+    keywordScore(t, ["无法自理", "需要帮助", "基本自理", "能自理", "完全自理", "行动自如"], null);
 
   // 代谢
   result.metabolic.bmi =
@@ -112,6 +103,8 @@ export function ruleBasedExtract(text: string): ExtractedData {
     result.metabolic.systolicBP = parseInt(bp[1]);
     result.metabolic.diastolicBP = parseInt(bp[2]);
   }
+  result.metabolic.hba1c =
+    extractNumber(t, /(?:糖化血红蛋白|hba1c)[^\d]*(\d+(?:\.\d+)?)/) ?? null;
   result.metabolic.fastingGlucose =
     extractNumber(t, /(?:空腹血糖|血糖)[^\d]*(\d+(?:\.\d+)?)/) ?? null;
   result.metabolic.ldl =
@@ -150,18 +143,22 @@ export function ruleBasedExtract(text: string): ExtractedData {
   } else if (/不喝酒|不饮酒/.test(t)) {
     result.lifestyle.alcohol = 0;
   }
+  result.lifestyle.weightManagement =
+    keywordScore(t, ["不关注体重", "很少管理", "一般", "比较重视", "很重视体重", "严格管理"], null);
   result.lifestyle.stress =
     keywordScore(t, ["压力很大", "压力大", "压力一般", "压力较小", "没有压力", "压力很小"], null);
 
   // 心理
   result.psychosocial.mood =
     keywordScore(t, ["情绪很差", "情绪差", "情绪一般", "情绪不错", "情绪很好", "心情非常好"], null);
-  result.psychosocial.cognitiveActivity =
-    keywordScore(t, ["不学习", "很少阅读", "偶尔阅读", "经常阅读", "每天阅读"], null);
-  result.psychosocial.socialActivity =
-    keywordScore(t, ["不社交", "很少社交", "偶尔社交", "经常社交", "每天社交", "很活跃"], null);
+  result.psychosocial.cognitiveHealth =
+    keywordScore(t, ["记忆力很差", "记性差", "记性一般", "记性不错", "记性好", "记忆力很好"], null);
   result.psychosocial.loneliness =
     keywordScore(t, ["很孤独", "经常孤独", "有时孤独", "偶尔孤独", "不孤独", "从不孤独"], null);
+  result.psychosocial.purpose =
+    keywordScore(t, ["没有目标", "目标模糊", "目标一般", "比较有目标", "目标明确", "目标感很强"], null);
+  result.psychosocial.socialActivity =
+    keywordScore(t, ["不社交", "很少社交", "偶尔社交", "经常社交", "每天社交", "很活跃"], null);
 
   // 数字健康
   if (/每年体检|定期体检|体检/.test(t)) {
@@ -170,10 +167,10 @@ export function ruleBasedExtract(text: string): ExtractedData {
   if (/手环|手表|可穿戴|监测设备/.test(t)) {
     result.digital.wearable = /经常/.test(t) ? 2 : /偶尔/.test(t) ? 1 : 1;
   }
-  result.digital.monitorTimes =
-    extractNumber(t, /(?:每年|一年)[^\d]*(\d{1,2})[^\d]*(?:次|回)/) ?? null;
   result.digital.recordContinuity =
     extractNumber(t, /(?:记录|监测)连续性[^\d]*(\d{1,2})/) ?? null;
+  result.digital.adherence =
+    keywordScore(t, ["不坚持", "很少坚持", "偶尔坚持", "经常坚持", "很坚持", "严格坚持"], null);
 
   return result;
 }

@@ -1,6 +1,7 @@
 /**
  * CHLI（中国百岁健康标准指数）评分引擎类型定义
  * 综合公式：CHLI = 0.20×B + 0.20×F + 0.20×M + 0.15×L + 0.10×P + 0.15×D
+ * 含二级指标体系：每个维度由若干二级指标加权构成，部分二级指标依赖检验/专项检查数据。
  */
 
 /** 风险等级 */
@@ -9,88 +10,110 @@ export type RiskLevel = "excellent" | "good" | "moderate" | "risk" | "highRisk";
 /** 性别 */
 export type Gender = "male" | "female";
 
-/* ------------------------- 输入数据模型 ------------------------- */
+/* ------------------------- 二级指标输入模型 ------------------------- */
 
-/** B 生物年龄数据 */
+/** 检验数据的通用结构：available 表示用户是否有该项检查报告，值为数值型 */
+export interface LabValue {
+  /** 是否有该检验/检查 */
+  available: boolean;
+  /** 数值（无则为 null） */
+  value: number | null;
+}
+
+/* B 生物年龄二级指标 */
 export interface BioAgeInput {
   actualAge: number;
-  /** 生物年龄（可由体检标志物评估，若未知传 null） */
+  /** B1 生物年龄差值（可自评/体检） */
   biologicalAge: number | null;
+  /** B2 表观遗传年龄/衰老时钟（第3代，需检验） */
+  epigeneticAge: LabValue;
+  /** B3 炎症负荷（hs-CRP / IL-6 / TNF-α，需检验） */
+  inflammation: LabValue;
+  /** B4 免疫年龄/免疫功能（可自评或检验） */
+  immunity: number | null;
 }
 
-/** F 功能健康数据 */
+/* F 功能健康二级指标 */
 export interface FunctionalInput {
-  /** 自评躯体功能 1-5（1 很差 ~ 5 很好） */
-  bodyFunction: number;
-  /** 自评认知功能 1-5 */
-  cognition: number;
-  /** 生活自理能力 1-5 */
-  selfCare: number;
-  /** 每周运动天数 0-7 */
-  exerciseDays: number;
+  /** F1 日常活动能力 ADL/IADL 1-5 */
+  adl: number;
+  /** F2 步速/6分钟步行（需测试） */
+  gaitSpeed: LabValue;
+  /** F3 握力/肌肉力量（需测量） */
+  gripStrength: LabValue;
+  /** F4 平衡能力/跌倒风险（需测试） */
+  balance: LabValue;
+  /** F5 认知功能 MoCA/MMSE（需测试） */
+  cognitiveTest: LabValue;
 }
 
-/** M 代谢与慢病数据 */
+/* M 代谢与慢病二级指标 */
 export interface MetabolicInput {
-  /** BMI 体重指数 */
+  /** M4 体成分 BMI（可计算） */
   bmi: number;
-  /** 收缩压 mmHg */
+  /** M3 血压与心血管风险（需测量） */
   systolicBP: number;
-  /** 舒张压 mmHg */
   diastolicBP: number;
-  /** 空腹血糖 mmol/L */
-  fastingGlucose: number;
-  /** 血脂（LDL-C mmol/L） */
-  ldl: number;
-  /** 慢病数量 0-6+ */
+  /** M1 血糖代谢 HbA1c/空腹血糖（需检验） */
+  hba1c: LabValue;
+  fastingGlucose: LabValue;
+  /** M2 血脂 LDL-C/ApoB（需检验） */
+  ldl: LabValue;
+  /** M5 肝肾功能与基础慢病（需检验） */
+  liverKidney: LabValue;
   chronicCount: number;
-  /** 慢病控制是否良好（0 差 / 1 一般 / 2 良好） */
   chronicControl: number;
 }
 
-/** L 生活方式数据 */
+/* L 生活方式二级指标 */
 export interface LifestyleInput {
-  /** 饮食健康度 0-10 */
+  /** L3 饮食质量 0-10 */
   diet: number;
-  /** 每日睡眠时长 小时 */
+  /** L2 睡眠质量 */
   sleepHours: number;
-  /** 睡眠质量 1-5 */
   sleepQuality: number;
-  /** 每周运动次数 0-7 */
+  /** L1 运动水平 */
   weeklyExercise: number;
-  /** 吸烟（0 从不 / 1 已戒 / 2 偶尔 / 3 经常） */
+  /** L4 烟酒 */
   smoking: number;
-  /** 饮酒（0 从不 / 1 少量 / 2 经常） */
   alcohol: number;
-  /** 压力水平 1-5（1 极低 ~ 5 极高） */
+  /** L5 体重管理依从性 */
+  weightManagement: number;
+  /** 压力管理（辅助） */
   stress: number;
 }
 
-/** P 心理认知与社交数据 */
+/* P 心理认知二级指标 */
 export interface PsychosocialInput {
-  /** 情绪状态 1-5（1 很差 ~ 5 很好） */
+  /** P1 抑郁焦虑压力 1-5 */
   mood: number;
-  /** 认知训练频率（0 从不 ~ 5 每天） */
-  cognitiveActivity: number;
-  /** 社交参与频率（0 从不 ~ 5 每天） */
-  socialActivity: number;
-  /** 孤独感 1-5（1 无 ~ 5 严重） */
+  /** P2 认知健康与记忆 1-5 */
+  cognitiveHealth: number;
+  /** P3 社会连接与孤独感 1-5 */
   loneliness: number;
+  /** P4 生活目标感/心理韧性 1-5 */
+  purpose: number;
+  /** P5 社交参与 0-5 */
+  socialActivity: number;
 }
 
-/** D 数字健康轨迹数据 */
+/* D 数字健康轨迹二级指标 */
 export interface DigitalHealthInput {
-  /** 是否定期体检（0 否 / 1 是） */
-  regularCheckup: number;
-  /** 可穿戴设备使用（0 不使用 / 1 偶尔 / 2 经常） */
-  wearable: number;
-  /** 健康数据记录连续性 0-10 */
+  /** D1 连续健康数据完整性 0-10 */
   recordContinuity: number;
-  /** 每年健康监测次数 */
-  monitorTimes: number;
+  /** D2 可穿戴设备数据质量 0-2 */
+  wearable: number;
+  /** D3 健康指标改善趋势（需历史数据） */
+  improvingTrend: LabValue;
+  /** D4 AI 风险预测结果（需 AI 评估） */
+  aiRiskPrediction: number | null;
+  /** D5 健康管理依从性 0-5 */
+  adherence: number;
+  /** 体检习惯（辅助） */
+  regularCheckup: number;
 }
 
-/** 完整评估输入 */
+/** 完整评估输入（含二级指标） */
 export interface AssessmentInput {
   gender: Gender;
   bio: BioAgeInput;
@@ -101,13 +124,29 @@ export interface AssessmentInput {
   digital: DigitalHealthInput;
 }
 
+/* ------------------------- 二级指标定义（用于问卷与权重） ------------------------- */
+
+/** 二级指标配置 */
+export interface SubIndicator {
+  /** 二级指标编码，如 B1 */
+  key: string;
+  /** 名称 */
+  name: string;
+  /** 所属一级维度 */
+  dimension: string;
+  /** 权重（占一级维度的比例，和为 1） */
+  weight: number;
+  /** 是否需要检验/检查 */
+  needsLab: boolean;
+  /** 说明 */
+  desc: string;
+}
+
 /* ------------------------- 维度得分模型 ------------------------- */
 
 /** 单维度得分结果 */
 export interface DimensionScore {
-  /** 维度标识 */
   key: string;
-  /** 维度名称 */
   name: string;
   /** 0-100 得分 */
   score: number;
@@ -115,7 +154,7 @@ export interface DimensionScore {
   weight: number;
   /** 风险等级 */
   level: RiskLevel;
-  /** 子项明细 */
+  /** 二级指标得分明细 key -> score(0-100) */
   details: Record<string, number>;
 }
 

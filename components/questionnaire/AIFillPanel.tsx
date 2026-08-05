@@ -9,7 +9,14 @@ interface Props {
   onFilled: (filled: number) => void;
 }
 
-/** 将提取结果扁平化为 path -> value */
+/** 提取字段中属于 LabValue 的路径（值需写入 .value 并标记 available） */
+const LAB_VALUE_PATHS = new Set([
+  "metabolic.hba1c",
+  "metabolic.ldl",
+  "metabolic.fastingGlucose",
+]);
+
+/** 将提取结果扁平化为 path -> value（对 LabValue 字段特殊处理） */
 function flattenData(data: ExtractedData): Record<string, number> {
   const flat: Record<string, number> = {};
   const groups: (keyof ExtractedData)[] = [
@@ -22,8 +29,14 @@ function flattenData(data: ExtractedData): Record<string, number> {
   ];
   for (const g of groups) {
     for (const [key, val] of Object.entries(data[g])) {
-      if (val !== null) {
-        flat[`${g}.${key}`] = val;
+      if (val === null || val === undefined) continue;
+      const path = `${g}.${key}`;
+      if (LAB_VALUE_PATHS.has(path)) {
+        // 检验数据：写入 .value 并标记 available
+        flat[`${path}.value`] = val;
+        flat[`${path}.available`] = 1;
+      } else {
+        flat[path] = val;
       }
     }
   }
