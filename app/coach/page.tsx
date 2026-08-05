@@ -11,10 +11,12 @@ import {
   Eye,
   PenLine,
   Stethoscope,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/store/auth-store";
 import { Markdown } from "@/components/Markdown";
+import { SourceDataView } from "@/components/coach/SourceDataView";
 
 interface SearchResult {
   id: number;
@@ -31,6 +33,8 @@ interface SearchResult {
     label: string;
     dimensions: { key: string; name: string; score: number; weight: number; level: string; details?: Record<string, number> }[];
     bioAge: { actualAge: number; biologicalAge: number; ageGap: number };
+    /** 客户原始填写数据 */
+    sourceData?: Record<string, any>;
   } | null;
 }
 
@@ -60,6 +64,9 @@ export default function CoachPage() {
   const [saving, setSaving] = useState(false);
   const [savedMsg, setSavedMsg] = useState<string | null>(null);
   const [preview, setPreview] = useState(false);
+  const [showAI, setShowAI] = useState(false);
+  const [aiInsight, setAiInsight] = useState("");
+  const [loadingAI, setLoadingAI] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -98,6 +105,30 @@ export default function CoachPage() {
       setSearching(false);
     }
   }, [code]);
+
+  /** 生成 AI 解读作为参考 */
+  const generateAI = async () => {
+    if (!report?.result) return;
+    setLoadingAI(true);
+    setShowAI(true);
+    try {
+      const res = await fetch("/api/insights", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ result: report.result }),
+      });
+      const json = await res.json();
+      if (res.ok && json.content) {
+        setAiInsight(json.content);
+      } else {
+        setAiInsight("AI 解读生成失败，请稍后重试。");
+      }
+    } catch {
+      setAiInsight("AI 解读生成失败，请稍后重试。");
+    } finally {
+      setLoadingAI(false);
+    }
+  };
 
   const handleSave = async () => {
     if (!report) return;
@@ -323,11 +354,57 @@ export default function CoachPage() {
                 <p className="mt-4 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">
                   客户可见报告页会展示您撰写的人工解读。
                 </p>
+
+                {/* 客户原始填写数据 */}
+                {report.result?.sourceData && (
+                  <div className="mt-4">
+                    <h3 className="mb-2 text-xs font-semibold text-ink-500">客户原始填写数据</h3>
+                    <SourceDataView data={report.result.sourceData} />
+                  </div>
+                )}
               </div>
             </div>
 
             {/* 右：解读编辑器 */}
-            <div className="lg:col-span-3">
+            <div className="lg:col-span-3 space-y-6">
+              {/* AI 解读参考 */}
+              <div className="card overflow-hidden">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-brand-100 bg-brand-50/50 px-6 py-4">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-5 w-5 text-brand-600" />
+                    <h2 className="font-bold text-ink-900">AI 解读参考</h2>
+                    <span className="text-xs text-ink-400">供您参考，可复制后修改</span>
+                  </div>
+                  <button
+                    onClick={generateAI}
+                    disabled={loadingAI}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-brand-200 bg-white px-3 py-1.5 text-xs font-medium text-brand-700 transition-colors hover:bg-brand-50"
+                  >
+                    {loadingAI ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                    {loadingAI ? "生成中..." : showAI ? "重新生成" : "生成 AI 解读"}
+                  </button>
+                </div>
+                {showAI && (
+                  <div className="max-h-[400px] overflow-y-auto p-6">
+                    <div className="mb-3 flex justify-end">
+                      <button
+                        onClick={() => navigator.clipboard.writeText(aiInsight)}
+                        className="inline-flex items-center gap-1 rounded-lg border border-brand-100 px-2.5 py-1 text-[11px] text-ink-500 transition-colors hover:bg-brand-50"
+                      >
+                        复制 Markdown
+                      </button>
+                    </div>
+                    {aiInsight ? (
+                      <Markdown content={aiInsight} />
+                    ) : (
+                      <div className="py-10 text-center text-sm text-ink-400">
+                        点击「生成 AI 解读」获取参考内容
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
               <div className="card overflow-hidden">
                 <div className="flex flex-wrap items-center justify-between gap-3 border-b border-brand-100 bg-brand-50/50 px-6 py-4">
                   <div className="flex items-center gap-2">

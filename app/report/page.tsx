@@ -27,7 +27,7 @@ import { CoachInterpretation } from "@/components/report/CoachInterpretation";
 
 export default function ReportPage() {
   const router = useRouter();
-  const { result, reset } = useAssessment();
+  const { result, data, reset } = useAssessment();
   const { user } = useAuth();
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
@@ -40,10 +40,17 @@ export default function ReportPage() {
     }
   }, [result, router]);
 
-  // 登录用户：生成报告后默认自动保存
+  // 登录用户：生成报告后默认自动保存（避免重复保存已存在的报告）
   useEffect(() => {
-    if (!result || !user || autoSavedRef.current) return;
+    if (!result || !user || !result.reportCode || autoSavedRef.current) return;
     if (user.role === "user" || user.role === "admin" || user.role === "health_coach") {
+      // 检查该报告是否已在本地记录为已保存
+      const savedCodes = JSON.parse(localStorage.getItem("chi_saved_reports") || "[]");
+      if (savedCodes.includes(result.reportCode)) {
+        autoSavedRef.current = true;
+        setSaveMsg("报告已自动保存到「我的报告」");
+        return;
+      }
       autoSavedRef.current = true;
       setSaveMsg(null);
       (async () => {
@@ -54,16 +61,21 @@ export default function ReportPage() {
             body: JSON.stringify({
               chliScore: result.chliScore,
               level: result.level,
-              payload: result,
+              payload: { ...result, sourceData: data },
             }),
           });
-          const data = await res.json();
+          const saveData = await res.json();
           if (res.ok) {
+            // 记录已保存的报告编码
+            const updated = [...savedCodes, result.reportCode].slice(-100);
+            localStorage.setItem("chi_saved_reports", JSON.stringify(updated));
             setSaveMsg("报告已自动保存到「我的报告」");
           } else {
-            setSaveMsg(data.error || "自动保存失败，可手动保存");
+            autoSavedRef.current = false;
+            setSaveMsg(saveData.error || "自动保存失败，可手动保存");
           }
         } catch {
+          autoSavedRef.current = false;
           setSaveMsg("自动保存失败，可手动保存");
         }
       })();
