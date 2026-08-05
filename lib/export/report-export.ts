@@ -30,7 +30,7 @@ async function captureImage(element: HTMLElement, format: "png" | "jpeg"): Promi
   return format === "png" ? toPng(element, options) : toJpeg(element, options);
 }
 
-/** 网页版导出（PNG / JPEG 网页截图；PDF 为 A4 排版设计版） */
+/** 网页版导出（PNG / JPEG 网页截图；PDF 为 A4 文档排版） */
 export async function exportReport(
   element: HTMLElement,
   format: ExportFormat,
@@ -46,7 +46,7 @@ export async function exportReport(
     return;
   }
 
-  // PDF：基于 A4 纸重新排版设计（非网页截图）
+  // PDF：A4 文档式排版
   const siteUrl = typeof window !== "undefined" ? window.location.origin : "";
   const pages = await generateA4Pages(result, siteUrl);
   const pdf = new jsPDF("p", "pt", "a4");
@@ -102,7 +102,7 @@ export async function exportShareImage(
   siteUrl = "https://chi-longevity.bmaxkai.me"
 ): Promise<void> {
   const W = 750;
-  const headerH = 480; // 顶部留足空间
+  const headerH = 480;
   const bodyH = 580;
   const footerH = 340;
   const H = headerH + bodyH + footerH;
@@ -125,27 +125,60 @@ export async function exportShareImage(
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, W, headerH);
 
-  // 品牌徽标（去掉 emoji，避免字体不支持显示方块）
-  ctx.fillStyle = "rgba(255,255,255,0.16)";
-  roundRect(ctx, W / 2 - 200, 52, 400, 54, 27);
+  // 装饰网格纹理
+  ctx.strokeStyle = "rgba(255,255,255,0.05)";
+  ctx.lineWidth = 1;
+  for (let x = 0; x < W; x += 40) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, headerH);
+    ctx.stroke();
+  }
+  for (let y = 0; y < headerH; y += 40) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(W, y);
+    ctx.stroke();
+  }
+
+  // 装饰光晕
+  const glowGrad = ctx.createRadialGradient(W / 2, 270, 30, W / 2, 270, 180);
+  glowGrad.addColorStop(0, "rgba(255,255,255,0.18)");
+  glowGrad.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = glowGrad;
+  ctx.beginPath();
+  ctx.arc(W / 2, 270, 180, 0, Math.PI * 2);
   ctx.fill();
+
+  // 品牌徽标 + 医疗十字图标
+  ctx.fillStyle = "rgba(255,255,255,0.16)";
+  roundRect(ctx, W / 2 - 210, 50, 420, 56, 28);
+  ctx.fill();
+  const crossCX = W / 2 - 175;
+  const crossCY = 78;
+  ctx.fillStyle = "#FFFFFF";
+  ctx.beginPath();
+  ctx.arc(crossCX, crossCY, 16, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#0A5BA8";
+  ctx.fillRect(crossCX - 8, crossCY - 2.5, 16, 5);
+  ctx.fillRect(crossCX - 2.5, crossCY - 8, 5, 16);
+
   ctx.fillStyle = "#FFFFFF";
   ctx.font = "600 26px 'PingFang SC','Microsoft YaHei',sans-serif";
-  ctx.textAlign = "center";
+  ctx.textAlign = "left";
   ctx.textBaseline = "middle";
-  ctx.fillText("百岁白皮书 · 长寿指数评估", W / 2, 79);
+  ctx.fillText("百岁白皮书 · 长寿指数评估", crossCX + 26, 79);
 
-  // 副标题
   ctx.fillStyle = "rgba(255,255,255,0.8)";
   ctx.font = "18px 'PingFang SC','Microsoft YaHei',sans-serif";
   ctx.fillText("中国百岁健康标准指数（CHLI）", W / 2, 132);
 
-  // 综合指数标签
   ctx.fillStyle = "rgba(255,255,255,0.85)";
   ctx.font = "600 22px 'PingFang SC','Microsoft YaHei',sans-serif";
   ctx.fillText("综合长寿指数", W / 2, 180);
 
-  // 大数字（明确 textAlign: left，因为 startX 是起点）
+  // 大数字（精确居中）
   const slashGap = 14;
   ctx.font = "800 120px 'PingFang SC','Microsoft YaHei',sans-serif";
   const scoreText = String(score);
@@ -165,7 +198,7 @@ export async function exportShareImage(
   ctx.fillStyle = "rgba(255,255,255,0.85)";
   ctx.fillText(slashText, startX + scoreW + slashGap, 286);
 
-  // 等级标签（测量宽度居中）
+  // 等级标签
   ctx.font = "700 22px 'PingFang SC','Microsoft YaHei',sans-serif";
   const labelText = `健康等级 · ${result.label}`;
   const labelTextW = ctx.measureText(labelText).width;
@@ -185,7 +218,6 @@ export async function exportShareImage(
   ctx.textAlign = "center";
   ctx.fillText(`「 ${pickShareQuote(result)} 」`, W / 2, 418);
 
-  // 引导语
   ctx.fillStyle = "rgba(255,255,255,0.75)";
   ctx.font = "17px 'PingFang SC','Microsoft YaHei',sans-serif";
   ctx.fillText("—— 测一测你的长寿指数，扫码测一测 ——", W / 2, 452);
@@ -194,7 +226,6 @@ export async function exportShareImage(
   ctx.fillStyle = "#F0F6FC";
   ctx.fillRect(0, headerH, W, bodyH);
 
-  // 白色卡片
   ctx.fillStyle = "#FFFFFF";
   ctx.shadowColor = "rgba(6,61,112,0.10)";
   ctx.shadowBlur = 24;
@@ -211,7 +242,6 @@ export async function exportShareImage(
   ctx.textBaseline = "alphabetic";
   ctx.fillText("六大维度得分", 56, headerH + 78);
 
-  // 维度条形
   const labelW = 280;
   const barStartX = 56 + labelW + 24;
   const scoreW2 = 80;
@@ -223,36 +253,36 @@ export async function exportShareImage(
     const s = Math.round(d.score);
     const y = startY + i * rowH;
 
-    // 维度名（左对齐）
+    ctx.fillStyle = c;
+    ctx.beginPath();
+    ctx.arc(40, y - 6, 7, 0, Math.PI * 2);
+    ctx.fill();
+
     ctx.fillStyle = "#12232E";
     ctx.font = "600 22px 'PingFang SC','Microsoft YaHei',sans-serif";
     ctx.textAlign = "left";
     ctx.textBaseline = "alphabetic";
     ctx.fillText(`${d.key} · ${d.name}`, 56, y);
 
-    // 条形背景
     ctx.fillStyle = "#DCE9F8";
     roundRect(ctx, barStartX, y - 18, barW, 24, 12);
     ctx.fill();
-    // 条形填充
     ctx.fillStyle = c;
     const fillW = Math.max(0, (s / 100) * barW);
     if (fillW > 0) {
       roundRect(ctx, barStartX, y - 18, fillW, 24, 12);
       ctx.fill();
     }
-    // 分数（右对齐）
     ctx.fillStyle = "#12232E";
     ctx.font = "700 24px 'PingFang SC','Microsoft YaHei',sans-serif";
     ctx.textAlign = "right";
     ctx.fillText(String(s), W - 56, y);
   });
 
-  /* ---------- 底部：二维码（扫码测试） ---------- */
+  /* ---------- 底部：二维码 ---------- */
   ctx.fillStyle = "#F0F6FC";
   ctx.fillRect(0, headerH + bodyH, W, footerH);
 
-  // 二维码卡（居中）
   const cardW = W - 160;
   const cardX = 80;
   const cardY = headerH + bodyH + 36;
@@ -264,7 +294,6 @@ export async function exportShareImage(
   ctx.fill();
   ctx.shadowColor = "transparent";
 
-  // 二维码
   const qrUrl = `${siteUrl}/questionnaire`;
   const qrDataUrl = await QRCode.toDataURL(qrUrl, {
     width: 240,
@@ -282,7 +311,6 @@ export async function exportShareImage(
   const qrPadTop = 30;
   ctx.drawImage(qrImg, cardX + 40, cardY + qrPadTop, qrSize, qrSize);
 
-  // 右侧文字（与二维码垂直居中）
   const textX = cardX + 40 + qrSize + 32;
   const textCenterY = cardY + qrPadTop + qrSize / 2;
   ctx.textBaseline = "alphabetic";
@@ -299,17 +327,14 @@ export async function exportShareImage(
 
   ctx.fillStyle = "#8494A6";
   ctx.font = "16px 'PingFang SC','Microsoft YaHei',sans-serif";
-  // 网址：在剩余宽度内换行
   const urlMaxW = cardX + cardW - 40 - textX;
   wrapText(ctx, qrUrl, textX, textCenterY + 58, urlMaxW, 22);
 
-  // 免责声明
   ctx.fillStyle = "#8494A6";
   ctx.font = "17px 'PingFang SC','Microsoft YaHei',sans-serif";
   ctx.textAlign = "center";
   ctx.fillText("健康数据仅供参考，不构成医疗建议 · 请及时就医", W / 2, headerH + bodyH + footerH - 32);
 
-  // 导出
   const dataUrl = canvas.toDataURL("image/png");
   const link = document.createElement("a");
   link.download = "长寿指数分享.png";
@@ -326,13 +351,13 @@ function pickShareQuote(r: AssessmentResult): string {
   return "好的身体，是最值得投资的长寿";
 }
 
-/* ==================== A4 PDF 排版（Canvas 绘制） ==================== */
+/* ==================== A4 PDF 文档排版（Canvas 绘制） ==================== */
 
 const A4W = 794;
 const A4H = 1123;
-const SCALE = 1.5; // 平衡清晰度与文件体积
+const SCALE = 1.5;
+const MARGIN = 56;
 
-/** 创建一个 A4 比例的画布 */
 function createA4Canvas(): { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D } {
   const canvas = document.createElement("canvas");
   canvas.width = A4W * SCALE;
@@ -342,52 +367,103 @@ function createA4Canvas(): { canvas: HTMLCanvasElement; ctx: CanvasRenderingCont
   return { canvas, ctx };
 }
 
-/** 绘制 A4 页面页眉 */
-function drawHeader(ctx: CanvasRenderingContext2D, title: string, subtitle: string, page: number) {
-  // 顶部品牌渐变条
-  const grad = ctx.createLinearGradient(0, 0, A4W, 0);
-  grad.addColorStop(0, "#042A4D");
-  grad.addColorStop(0.5, "#0A5BA8");
-  grad.addColorStop(1, "#3186D8");
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, A4W, 108);
-  ctx.fillStyle = "#FFFFFF";
-  ctx.font = "700 22px 'PingFang SC','Microsoft YaHei',sans-serif";
-  ctx.textAlign = "left";
-  ctx.fillText("百岁白皮书 · 长寿指数评估报告", 48, 52);
-  ctx.font = "14px 'PingFang SC','Microsoft YaHei',sans-serif";
-  ctx.fillStyle = "rgba(255,255,255,0.8)";
-  ctx.fillText("中国百岁健康标准指数（CHLI）", 48, 82);
-  ctx.textAlign = "right";
-  ctx.fillText(`${page}`, A4W - 48, 52);
-
-  // 页面标题
+/** 文档页眉 */
+function drawDocHeader(ctx: CanvasRenderingContext2D) {
   ctx.fillStyle = "#0A5BA8";
-  ctx.font = "700 26px 'PingFang SC','Microsoft YaHei',sans-serif";
+  ctx.fillRect(0, 0, A4W, 6);
+  ctx.fillStyle = "#55677A";
+  ctx.font = "11px 'PingFang SC','Microsoft YaHei',sans-serif";
   ctx.textAlign = "left";
-  ctx.fillText(title, 48, 160);
-  ctx.fillStyle = "#8494A6";
-  ctx.font = "14px 'PingFang SC','Microsoft YaHei',sans-serif";
-  ctx.fillText(subtitle, 48, 188);
-  // 标题下划线
-  ctx.strokeStyle = "rgba(49,134,216,0.3)";
-  ctx.lineWidth = 2;
+  ctx.textBaseline = "alphabetic";
+  ctx.fillText("百岁白皮书 · 长寿指数评估报告", MARGIN, 32);
+  ctx.textAlign = "right";
+  ctx.fillText("CHLI 健康评估", A4W - MARGIN, 32);
+  ctx.strokeStyle = "#DCE9F8";
+  ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.moveTo(48, 202);
-  ctx.lineTo(A4W - 48, 202);
+  ctx.moveTo(MARGIN, 42);
+  ctx.lineTo(A4W - MARGIN, 42);
   ctx.stroke();
 }
 
-/** 绘制 A4 页脚 */
-function drawFooter(ctx: CanvasRenderingContext2D, page: number) {
+/** 文档页脚 */
+function drawDocFooter(ctx: CanvasRenderingContext2D, page: number, total: number, dateStr: string) {
+  const fy = A4H - 40;
+  ctx.strokeStyle = "#DCE9F8";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(MARGIN, fy - 12);
+  ctx.lineTo(A4W - MARGIN, fy - 12);
+  ctx.stroke();
   ctx.fillStyle = "#8494A6";
-  ctx.font = "12px 'PingFang SC','Microsoft YaHei',sans-serif";
+  ctx.font = "10px 'PingFang SC','Microsoft YaHei',sans-serif";
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
+  ctx.fillText(`生成日期：${dateStr}`, MARGIN, fy);
   ctx.textAlign = "center";
-  ctx.fillText("本报告由「百岁白皮书」系统自动生成 · 仅供参考，不构成医疗诊断建议", A4W / 2, A4H - 36);
-  ctx.fillText(`第 ${page} 页 · © 2026 百岁白皮书`, A4W / 2, A4H - 18);
+  ctx.fillText("本报告仅供参考，不构成医疗诊断建议", A4W / 2, fy);
+  ctx.textAlign = "right";
+  ctx.fillText(`第 ${page} 页 / 共 ${total} 页`, A4W - MARGIN, fy);
 }
 
-/** 生成 A4 排版的多页图片（供 jsPDF 使用） */
+/** 章节标题（带编号方块） */
+function drawSectionTitle(ctx: CanvasRenderingContext2D, num: string, title: string, y: number): number {
+  ctx.fillStyle = "#0A5BA8";
+  roundRect(ctx, MARGIN, y - 18, 32, 28, 6);
+  ctx.fill();
+  ctx.fillStyle = "#FFFFFF";
+  ctx.font = "700 16px 'PingFang SC','Microsoft YaHei',sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(num, MARGIN + 16, y - 4);
+  ctx.fillStyle = "#12232E";
+  ctx.font = "700 20px 'PingFang SC','Microsoft YaHei',sans-serif";
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
+  ctx.fillText(title, MARGIN + 44, y);
+  ctx.strokeStyle = "#0A5BA8";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(MARGIN, y + 12);
+  ctx.lineTo(A4W - MARGIN, y + 12);
+  ctx.stroke();
+  return y + 36;
+}
+
+/** 段落正文（首行缩进） */
+function drawParagraph(ctx: CanvasRenderingContext2D, text: string, y: number, indent = true): number {
+  ctx.fillStyle = "#2B3A48";
+  ctx.font = "13px 'PingFang SC','Microsoft YaHei',sans-serif";
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
+  const prefix = indent ? "    " : "";
+  return wrapText(ctx, prefix + text, MARGIN, y, A4W - MARGIN * 2, 24);
+}
+
+/** 表格行 */
+function drawTableRow(
+  ctx: CanvasRenderingContext2D,
+  cols: { text: string; x: number; align: "left" | "center" | "right" }[],
+  y: number,
+  rowH: number,
+  isHeader = false,
+  isAlt = false
+) {
+  ctx.fillStyle = isHeader ? "#0A5BA8" : isAlt ? "#F0F6FC" : "#FFFFFF";
+  ctx.fillRect(MARGIN, y, A4W - MARGIN * 2, rowH);
+  ctx.fillStyle = isHeader ? "#FFFFFF" : "#2B3A48";
+  ctx.font = isHeader ? "600 13px 'PingFang SC','Microsoft YaHei',sans-serif" : "13px 'PingFang SC','Microsoft YaHei',sans-serif";
+  ctx.textBaseline = "middle";
+  cols.forEach((col) => {
+    ctx.textAlign = col.align;
+    ctx.fillText(col.text, col.x, y + rowH / 2);
+  });
+  ctx.strokeStyle = "#DCE9F8";
+  ctx.lineWidth = 1;
+  ctx.strokeRect(MARGIN, y, A4W - MARGIN * 2, rowH);
+}
+
+/** 生成 A4 文档式排版的多页图片 */
 export async function generateA4Pages(
   result?: AssessmentResult,
   siteUrl = ""
@@ -397,316 +473,350 @@ export async function generateA4Pages(
   const levelColor = LEVEL_COLORS[result.level] || "#3186D8";
   const score = Math.round(result.chliScore);
   const dims = result.dimensions;
+  const dateStr = new Date(result.createdAt || Date.now()).toLocaleDateString("zh-CN");
   const pages: string[] = [];
+  const TOTAL = 4;
 
   /* ========== 第 1 页：封面 ========== */
   {
     const { canvas, ctx } = createA4Canvas();
-    ctx.fillStyle = "#F4F8FC";
+    ctx.fillStyle = "#FFFFFF";
     ctx.fillRect(0, 0, A4W, A4H);
 
-    // 顶部大渐变区
-    const grad = ctx.createLinearGradient(0, 0, A4W, 0);
+    // 顶部品牌色块
+    const grad = ctx.createLinearGradient(0, 0, 0, 450);
     grad.addColorStop(0, "#042A4D");
-    grad.addColorStop(0.5, "#0A5BA8");
+    grad.addColorStop(0.6, "#0A5BA8");
     grad.addColorStop(1, "#3186D8");
     ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, A4W, 360);
+    ctx.fillRect(0, 0, A4W, 450);
 
-    // 品牌
-    ctx.fillStyle = "rgba(255,255,255,0.16)";
-    roundRect(ctx, 48, 48, 320, 46, 23);
+    // 品牌标识 + 医疗十字
+    ctx.fillStyle = "#FFFFFF";
+    ctx.beginPath();
+    ctx.arc(MARGIN + 12, 56, 14, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = "#FFFFFF";
-    ctx.font = "600 20px 'PingFang SC','Microsoft YaHei',sans-serif";
-    ctx.textAlign = "left";
-    ctx.fillText("🏥 百岁白皮书 · 长寿指数评估", 68, 78);
-
-    ctx.fillStyle = "rgba(255,255,255,0.85)";
-    ctx.font = "16px 'PingFang SC','Microsoft YaHei',sans-serif";
-    ctx.fillText("中国百岁健康标准指数（CHLI）评估报告", 48, 112);
-
-    // 报告标题
-    ctx.textBaseline = "alphabetic";
-    ctx.fillStyle = "#FFFFFF";
-    ctx.font = "700 40px 'PingFang SC','Microsoft YaHei',sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText("综合长寿指数", A4W / 2, 210);
-
-    // 综合指数大数字（手动精确居中）
-    const slashGap2 = 16;
-    ctx.font = "800 140px 'PingFang SC','Microsoft YaHei',sans-serif";
-    const scoreText2 = String(score);
-    const scoreW2 = ctx.measureText(scoreText2).width;
-    ctx.font = "500 38px 'PingFang SC','Microsoft YaHei',sans-serif";
-    const slashText2 = "/ 100";
-    const slashW2 = ctx.measureText(slashText2).width;
-    const totalW2 = scoreW2 + slashGap2 + slashW2;
-    const startX2 = (A4W - totalW2) / 2;
-
-    ctx.textAlign = "left";
-    ctx.font = "800 140px 'PingFang SC','Microsoft YaHei',sans-serif";
-    ctx.fillStyle = "#FFFFFF";
-    ctx.fillText(scoreText2, startX2, 330);
-    ctx.font = "500 38px 'PingFang SC','Microsoft YaHei',sans-serif";
-    ctx.fillStyle = "rgba(255,255,255,0.85)";
-    ctx.fillText(slashText2, startX2 + scoreW2 + slashGap2, 318);
-
-    // 等级标签（基于文字宽度自适应居中）
-    ctx.font = "700 22px 'PingFang SC','Microsoft YaHei',sans-serif";
-    const labelText2 = `健康等级 · ${result.label}`;
-    const labelTextW2 = ctx.measureText(labelText2).width;
-    const tagW2 = labelTextW2 + 48;
-    ctx.fillStyle = levelColor;
-    roundRect(ctx, (A4W - tagW2) / 2, 350, tagW2, 48, 24);
-    ctx.fill();
-    ctx.fillStyle = "#FFFFFF";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(labelText2, A4W / 2, 376);
-    ctx.textBaseline = "alphabetic";
-
-    // 生物年龄对比
-    ctx.textAlign = "left";
-    ctx.fillStyle = "#12232E";
-    ctx.font = "700 22px 'PingFang SC','Microsoft YaHei',sans-serif";
-    ctx.fillText("生物年龄对比", 48, 430);
-
-    const cardW = (A4W - 48 * 2 - 24) / 2;
-    const cardY = 450;
-    const cardH = 150;
-    // 实际年龄卡
-    const drawBioCard = (x: number, label: string, numVal: number, numColor: string, bgColor: string) => {
-      ctx.fillStyle = bgColor;
-      ctx.shadowColor = "rgba(6,61,112,0.1)";
-      ctx.shadowBlur = 12;
-      roundRect(ctx, x, cardY, cardW, cardH, 14);
-      ctx.fill();
-      ctx.shadowColor = "transparent";
-
-      const cx = x + cardW / 2;
-      ctx.fillStyle = "#8494A6";
-      ctx.font = "16px 'PingFang SC','Microsoft YaHei',sans-serif";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "alphabetic";
-      ctx.fillText(label, cx, cardY + 48);
-
-      // 数字 + "岁" 精确居中
-      ctx.font = "700 52px 'PingFang SC','Microsoft YaHei',sans-serif";
-      const nText = String(numVal);
-      const nW = ctx.measureText(nText).width;
-      ctx.font = "22px 'PingFang SC','Microsoft YaHei',sans-serif";
-      const suiW = ctx.measureText("岁").width;
-      const gap = 8;
-      const total = nW + gap + suiW;
-      const sX = cx - total / 2;
-
-      ctx.textAlign = "left";
-      ctx.fillStyle = numColor;
-      ctx.font = "700 52px 'PingFang SC','Microsoft YaHei',sans-serif";
-      ctx.fillText(nText, sX, cardY + 116);
-      ctx.fillStyle = numColor;
-      ctx.font = "22px 'PingFang SC','Microsoft YaHei',sans-serif";
-      ctx.fillText("岁", sX + nW + gap, cardY + 110);
-    };
-    drawBioCard(48, "实际年龄", result.bioAge.actualAge, "#12232E", "#FFFFFF");
-    drawBioCard(48 + cardW + 24, "生物年龄", result.bioAge.biologicalAge, levelColor, `${levelColor}12`);
-
-    // 年龄差说明
-    const gap = result.bioAge.ageGap;
-    ctx.textAlign = "left";
-    ctx.fillStyle = levelColor;
-    ctx.font = "600 18px 'PingFang SC','Microsoft YaHei',sans-serif";
-    const gapText =
-      gap < 0
-        ? `您的生物年龄比实际年龄年轻 ${Math.abs(gap)} 岁，衰老速度较慢，健康潜力良好。`
-        : gap > 2
-        ? `您的生物年龄比实际年龄大 ${gap} 岁，提示衰老速度偏快，建议加强健康干预。`
-        : `您的生物年龄与实际年龄相当，处于正常衰老轨道。`;
-    ctx.fillText(gapText, 48, 660);
-
-    // 描述
-    ctx.fillStyle = "#55677A";
-    ctx.font = "16px 'PingFang SC','Microsoft YaHei',sans-serif";
-    wrapText(ctx, meta.description, 48, 700, A4W - 96, 28);
-
-    // 底部二维码 + 网址（扫码测试评估）
-    const qrUrlPdf = `${siteUrl}/questionnaire`;
-    const qrDataUrl = await QRCode.toDataURL(qrUrlPdf, {
-      width: 200,
-      margin: 1,
-      color: { dark: "#063D70", light: "#FFFFFF" },
-    });
-    const qrImg = new Image();
-    await new Promise<void>((resolve) => {
-      qrImg.onload = () => resolve();
-      qrImg.onerror = () => resolve();
-      qrImg.src = qrDataUrl;
-    });
-
-    // 二维码卡（带边框）
-    const qrCardX = 48;
-    const qrCardY = 780;
-    const qrCardW = A4W - 96;
-    const qrCardH = 130;
-    ctx.fillStyle = "#FFFFFF";
-    ctx.shadowColor = "rgba(6,61,112,0.08)";
-    ctx.shadowBlur = 14;
-    ctx.shadowOffsetY = 3;
-    roundRect(ctx, qrCardX, qrCardY, qrCardW, qrCardH, 14);
-    ctx.fill();
-    ctx.shadowColor = "transparent";
-
-    ctx.drawImage(qrImg, qrCardX + 20, qrCardY + 13, 104, 104);
-
-    // 右侧文字
-    ctx.textAlign = "left";
-    ctx.textBaseline = "alphabetic";
-    const textX = qrCardX + 20 + 104 + 24;
     ctx.fillStyle = "#0A5BA8";
-    ctx.font = "700 20px 'PingFang SC','Microsoft YaHei',sans-serif";
-    ctx.fillText("扫码立即测试评估", textX, qrCardY + 44);
-
-    ctx.fillStyle = "#55677A";
-    ctx.font = "14px 'PingFang SC','Microsoft YaHei',sans-serif";
-    ctx.fillText("你也来测一测自己的健康寿命指数", textX, qrCardY + 72);
-
-    ctx.fillStyle = "#8494A6";
-    ctx.font = "12px 'PingFang SC','Microsoft YaHei',sans-serif";
-    wrapText(ctx, qrUrlPdf, textX, qrCardY + 96, qrCardX + qrCardW - 20 - textX, 18);
-
-    // 免责声明
-    ctx.fillStyle = "#8494A6";
+    ctx.fillRect(MARGIN + 4, 53, 16, 6);
+    ctx.fillRect(MARGIN + 9, 48, 6, 16);
+    ctx.fillStyle = "#FFFFFF";
+    ctx.font = "600 16px 'PingFang SC','Microsoft YaHei',sans-serif";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
+    ctx.fillText("百岁白皮书 · CHLI", MARGIN + 36, 62);
+    ctx.textAlign = "right";
+    ctx.fillStyle = "rgba(255,255,255,0.8)";
     ctx.font = "13px 'PingFang SC','Microsoft YaHei',sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText("本报告由系统自动生成，仅供参考，不构成医疗诊断建议 · 如有健康问题请及时就医", A4W / 2, A4H - 30);
+    ctx.fillText("中国百岁健康标准指数", A4W - MARGIN, 62);
 
-    pages.push(canvas.toDataURL("image/jpeg", 0.9));
+    // 主标题
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#FFFFFF";
+    ctx.font = "700 44px 'PingFang SC','Microsoft YaHei',sans-serif";
+    ctx.fillText("长寿指数评估报告", A4W / 2, 200);
+    ctx.fillStyle = "rgba(255,255,255,0.85)";
+    ctx.font = "18px 'PingFang SC','Microsoft YaHei',sans-serif";
+    ctx.fillText("Longevity Health Assessment Report", A4W / 2, 236);
+
+    ctx.strokeStyle = "rgba(255,255,255,0.3)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(A4W / 2 - 120, 270);
+    ctx.lineTo(A4W / 2 + 120, 270);
+    ctx.stroke();
+
+    // 综合指数
+    ctx.fillStyle = "rgba(255,255,255,0.85)";
+    ctx.font = "16px 'PingFang SC','Microsoft YaHei',sans-serif";
+    ctx.fillText("综合长寿指数", A4W / 2, 310);
+
+    ctx.font = "800 90px 'PingFang SC','Microsoft YaHei',sans-serif";
+    ctx.fillStyle = "#FFFFFF";
+    const numW = ctx.measureText(String(score)).width;
+    ctx.fillText(String(score), A4W / 2, 390);
+    ctx.font = "500 28px 'PingFang SC','Microsoft YaHei',sans-serif";
+    ctx.fillStyle = "rgba(255,255,255,0.8)";
+    ctx.textAlign = "left";
+    ctx.fillText("/ 100", A4W / 2 + numW / 2 + 8, 386);
+
+    // 等级标签
+    ctx.textAlign = "center";
+    ctx.font = "700 18px 'PingFang SC','Microsoft YaHei',sans-serif";
+    const lvText = `健康等级：${result.label}`;
+    const lvW = ctx.measureText(lvText).width;
+    ctx.fillStyle = levelColor;
+    roundRect(ctx, (A4W - lvW - 40) / 2, 410, lvW + 40, 32, 16);
+    ctx.fill();
+    ctx.fillStyle = "#FFFFFF";
+    ctx.fillText(lvText, A4W / 2, 431);
+
+    // 信息表格
+    let y = 500;
+    ctx.fillStyle = "#12232E";
+    ctx.font = "700 18px 'PingFang SC','Microsoft YaHei',sans-serif";
+    ctx.textAlign = "left";
+    ctx.fillText("报告信息", MARGIN, y);
+    ctx.strokeStyle = "#DCE9F8";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(MARGIN, y + 8);
+    ctx.lineTo(A4W - MARGIN, y + 8);
+    ctx.stroke();
+
+    y += 30;
+    const infoRows: [string, string][] = [
+      ["报告名称", "长寿指数评估报告"],
+      ["评估模型", "中国百岁健康标准指数（CHLI）"],
+      ["生成日期", dateStr],
+      ["综合指数", `${score} / 100`],
+      ["健康等级", result.label],
+      ["实际年龄", `${result.bioAge.actualAge} 岁`],
+      ["生物年龄", `${result.bioAge.biologicalAge} 岁`],
+    ];
+    infoRows.forEach((row, i) => {
+      const ry = y + i * 32;
+      ctx.fillStyle = i % 2 === 0 ? "#F8FBFD" : "#FFFFFF";
+      ctx.fillRect(MARGIN, ry, A4W - MARGIN * 2, 32);
+      ctx.fillStyle = "#8494A6";
+      ctx.font = "13px 'PingFang SC','Microsoft YaHei',sans-serif";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      ctx.fillText(row[0], MARGIN + 16, ry + 16);
+      ctx.fillStyle = "#12232E";
+      ctx.font = "600 13px 'PingFang SC','Microsoft YaHei',sans-serif";
+      ctx.fillText(row[1], MARGIN + 160, ry + 16);
+      ctx.strokeStyle = "#E8F0FA";
+      ctx.strokeRect(MARGIN, ry, A4W - MARGIN * 2, 32);
+    });
+
+    // 保密说明
+    y = A4H - 120;
+    ctx.fillStyle = "#F0F6FC";
+    roundRect(ctx, MARGIN, y, A4W - MARGIN * 2, 70, 8);
+    ctx.fill();
+    ctx.fillStyle = "#55677A";
+    ctx.font = "12px 'PingFang SC','Microsoft YaHei',sans-serif";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
+    wrapText(ctx, "保密说明：本报告含个人健康评估信息，仅供本人参考。报告由「百岁白皮书」系统基于 CHLI 模型自动生成，不构成医疗诊断建议，如有健康问题请及时就医。", MARGIN + 16, y + 26, A4W - MARGIN * 2 - 32, 20);
+
+    pages.push(canvas.toDataURL("image/jpeg", 0.92));
   }
 
-  /* ========== 第 2 页：维度得分 + 优势/关注 ========== */
+  /* ========== 第 2 页：综合评估结果 ========== */
   {
     const { canvas, ctx } = createA4Canvas();
-    ctx.fillStyle = "#F4F8FC";
+    ctx.fillStyle = "#FFFFFF";
     ctx.fillRect(0, 0, A4W, A4H);
-    drawHeader(ctx, "六大维度得分", "各维度得分与风险等级（满分 100 分）", 2);
+    drawDocHeader(ctx);
 
-    const labelW = 280; // 维度名宽度，给足空间容纳长名称
-    const barStartX = 48 + labelW + 20;
-    const scoreW = 80;
-    const barW = A4W - 48 * 2 - labelW - 20 - scoreW;
-    const rowH = 88;
-    const startY = 260;
-    dims.forEach((d, i) => {
-      const c = LEVEL_COLORS[d.level] || "#3186D8";
-      const s = Math.round(d.score);
-      const y = startY + i * rowH;
+    let y = 80;
+    y = drawSectionTitle(ctx, "一", "综合评估结果", y);
+    y = drawParagraph(ctx, `根据中国百岁健康标准指数（CHLI）评估模型，您的综合长寿指数为 ${score} 分（满分 100 分），健康等级评定为「${result.label}」。${meta.description}`, y + 6);
+    y += 16;
 
-      ctx.fillStyle = "#12232E";
-      ctx.font = "600 18px 'PingFang SC','Microsoft YaHei',sans-serif";
-      ctx.textAlign = "left";
-      ctx.fillText(`${d.key} · ${d.name}`, 48, y, labelW);
+    ctx.fillStyle = "#0A5BA8";
+    ctx.font = "700 15px 'PingFang SC','Microsoft YaHei',sans-serif";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
+    ctx.fillText("1.1 生物年龄对比", MARGIN, y);
+    y += 24;
 
-      // 背景条
-      ctx.fillStyle = "#DCE9F8";
-      roundRect(ctx, barStartX, y - 18, barW, 28, 14);
-      ctx.fill();
-      // 填充
-      ctx.fillStyle = c;
-      const fillW = Math.max(0, (s / 100) * barW);
-      if (fillW > 0) {
-        roundRect(ctx, barStartX, y - 18, fillW, 28, 14);
-        ctx.fill();
-      }
-      // 分数
-      ctx.fillStyle = "#12232E";
-      ctx.font = "700 22px 'PingFang SC','Microsoft YaHei',sans-serif";
-      ctx.textAlign = "right";
-      ctx.fillText(String(s), A4W - 48, y);
+    const bioRows = [
+      [{ text: "指标", x: MARGIN + 100, align: "center" as const }, { text: "数值", x: MARGIN + 280, align: "center" as const }, { text: "说明", x: MARGIN + 480, align: "center" as const }],
+      [{ text: "实际年龄", x: MARGIN + 100, align: "center" as const }, { text: `${result.bioAge.actualAge} 岁`, x: MARGIN + 280, align: "center" as const }, { text: "出生至今的实际年限", x: MARGIN + 480, align: "center" as const }],
+      [{ text: "生物年龄", x: MARGIN + 100, align: "center" as const }, { text: `${result.bioAge.biologicalAge} 岁`, x: MARGIN + 280, align: "center" as const }, { text: "基于生物标志物测算", x: MARGIN + 480, align: "center" as const }],
+      [{ text: "年龄差值", x: MARGIN + 100, align: "center" as const }, { text: `${result.bioAge.ageGap > 0 ? "+" : ""}${result.bioAge.ageGap} 岁`, x: MARGIN + 280, align: "center" as const }, { text: result.bioAge.ageGap < 0 ? "生物年龄更年轻" : result.bioAge.ageGap > 2 ? "衰老速度偏快" : "基本相当", x: MARGIN + 480, align: "center" as const }],
+    ];
+    const bioRowH = 34;
+    bioRows.forEach((row, i) => {
+      drawTableRow(ctx, row, y + i * bioRowH, bioRowH, i === 0, i % 2 === 0 && i !== 0);
     });
+    y += bioRows.length * bioRowH + 16;
 
-    // 优势 / 重点关注
+    const gap = result.bioAge.ageGap;
+    const gapDesc = gap < -2
+      ? `您的生物年龄比实际年龄年轻 ${Math.abs(gap)} 岁，表明身体衰老速度较慢，细胞功能与身体机能处于同龄人优秀水平，这是长期健康生活方式的积极回报。`
+      : gap > 2
+      ? `您的生物年龄比实际年龄大 ${gap} 岁，提示身体衰老速度相对偏快，通常是生活方式、代谢状态或慢性压力长期累积的结果，但也意味着有较大的改善空间。`
+      : `您的生物年龄与实际年龄基本相当，处于正常衰老轨道，基础健康状况良好。`;
+    y = drawParagraph(ctx, gapDesc, y);
+    y += 20;
+
+    ctx.fillStyle = "#0A5BA8";
+    ctx.font = "700 15px 'PingFang SC','Microsoft YaHei',sans-serif";
+    ctx.fillText("1.2 健康等级说明", MARGIN, y);
+    y += 24;
+    y = drawParagraph(ctx, `您当前的健康等级为「${result.label}」。${meta.description} 建议结合下方各维度分析，针对性改善薄弱环节，巩固优势维度，持续提升综合健康水平。`, y);
+
+    drawDocFooter(ctx, 2, TOTAL, dateStr);
+    pages.push(canvas.toDataURL("image/jpeg", 0.92));
+  }
+
+  /* ========== 第 3 页：六大维度分析 ========== */
+  {
+    const { canvas, ctx } = createA4Canvas();
+    ctx.fillStyle = "#FFFFFF";
+    ctx.fillRect(0, 0, A4W, A4H);
+    drawDocHeader(ctx);
+
+    let y = 80;
+    y = drawSectionTitle(ctx, "二", "六大维度分析", y);
+    y = drawParagraph(ctx, "CHLI 综合指数由六大维度加权计算：生物年龄（20%）、功能健康（20%）、代谢慢病（20%）、生活方式（15%）、心理认知（10%）、数字健康（15%）。各维度得分如下：", y + 6);
+    y += 12;
+
+    const dimRowH = 36;
+    const headerCols = [
+      { text: "维度", x: MARGIN + 80, align: "center" as const },
+      { text: "权重", x: MARGIN + 220, align: "center" as const },
+      { text: "得分", x: MARGIN + 320, align: "center" as const },
+      { text: "等级", x: MARGIN + 420, align: "center" as const },
+      { text: "状态", x: MARGIN + 560, align: "center" as const },
+    ];
+    drawTableRow(ctx, headerCols, y, dimRowH, true);
+    y += dimRowH;
+
     const sorted = [...dims].sort((a, b) => b.score - a.score);
     const strong = sorted[0];
     const weak = sorted[sorted.length - 1];
+    dims.forEach((d, i) => {
+      const dMeta = RISK_META[d.level];
+      const levelLabel = d.level === "excellent" ? "优" : d.level === "good" ? "良" : d.level === "moderate" ? "中" : d.level === "risk" ? "风险" : "高风险";
+      const rows = [
+        { text: `${d.key} · ${d.name}`, x: MARGIN + 80, align: "center" as const },
+        { text: `${(d.weight * 100).toFixed(0)}%`, x: MARGIN + 220, align: "center" as const },
+        { text: `${Math.round(d.score)}`, x: MARGIN + 320, align: "center" as const },
+        { text: levelLabel, x: MARGIN + 420, align: "center" as const },
+        { text: dMeta.label, x: MARGIN + 560, align: "center" as const },
+      ];
+      drawTableRow(ctx, rows, y + i * dimRowH, dimRowH, false, i % 2 === 1);
+    });
+    y += dims.length * dimRowH + 20;
 
-    let y = startY + dims.length * rowH + 40;
-    // 优势
     ctx.fillStyle = "#10B981";
-    ctx.font = "700 20px 'PingFang SC','Microsoft YaHei',sans-serif";
+    ctx.font = "700 15px 'PingFang SC','Microsoft YaHei',sans-serif";
     ctx.textAlign = "left";
-    ctx.fillText("优势维度", 48, y);
-    ctx.fillStyle = "#55677A";
-    ctx.font = "16px 'PingFang SC','Microsoft YaHei',sans-serif";
-    wrapText(ctx, `得分最高的维度是「${strong.name}」（${strong.score.toFixed(1)} 分），是您健康寿命的重要支撑。`, 48, y + 30, A4W - 96, 26);
+    ctx.textBaseline = "alphabetic";
+    ctx.fillText("● 优势维度", MARGIN, y);
+    y += 24;
+    y = drawParagraph(ctx, `得分最高的维度是「${strong.name}」（${strong.score.toFixed(1)} 分），是您健康寿命的重要支撑，建议继续保持当前的健康行为模式。`, y);
+    y += 16;
 
-    y += 110;
-    // 关注
     ctx.fillStyle = "#F59E0B";
-    ctx.font = "700 20px 'PingFang SC','Microsoft YaHei',sans-serif";
-    ctx.fillText("重点关注", 48, y);
-    ctx.fillStyle = "#55677A";
-    ctx.font = "16px 'PingFang SC','Microsoft YaHei',sans-serif";
-    wrapText(ctx, `相对薄弱的维度是「${weak.name}」（${weak.score.toFixed(1)} 分），建议优先改善以提升整体指数。`, 48, y + 30, A4W - 96, 26);
+    ctx.font = "700 15px 'PingFang SC','Microsoft YaHei',sans-serif";
+    ctx.fillText("● 重点关注", MARGIN, y);
+    y += 24;
+    y = drawParagraph(ctx, `相对薄弱的维度是「${weak.name}」（${weak.score.toFixed(1)} 分），建议优先改善以提升整体指数。具体改善建议见下一章节。`, y);
 
-    drawFooter(ctx, 2);
-    pages.push(canvas.toDataURL("image/jpeg", 0.9));
+    drawDocFooter(ctx, 3, TOTAL, dateStr);
+    pages.push(canvas.toDataURL("image/jpeg", 0.92));
   }
 
-  /* ========== 第 3 页：改善建议 + 解读 ========== */
+  /* ========== 第 4 页：改善建议 + AI 解读 ========== */
   {
     const { canvas, ctx } = createA4Canvas();
-    ctx.fillStyle = "#F4F8FC";
+    ctx.fillStyle = "#FFFFFF";
     ctx.fillRect(0, 0, A4W, A4H);
-    drawHeader(ctx, "个性化改善建议", "基于您的评估结果生成的重点行动建议", 3);
+    drawDocHeader(ctx);
+
+    let y = 80;
+    y = drawSectionTitle(ctx, "三", "个性化改善建议", y);
+    y = drawParagraph(ctx, "基于您的评估结果，以下是为您生成的重点行动建议，建议以 90 天为一个改善周期执行：", y + 6);
+    y += 8;
 
     const insights = generateRuleInsights(result);
     const lines = insights.split("\n");
-    let y = 250;
-    ctx.textAlign = "left";
-    const maxW = A4W - 96;
+    let inTips = false;
+    let tipNum = 0;
     for (const line of lines) {
-      if (y > A4H - 120) break;
-      if (line.startsWith("## ")) {
-        y += 24;
-        ctx.fillStyle = "#0A5BA8";
-        ctx.font = "700 22px 'PingFang SC','Microsoft YaHei',sans-serif";
-        ctx.fillText(line.replace("## ", ""), 48, y);
-        y += 14;
-      } else if (line.startsWith("> ")) {
-        y += 6;
-        ctx.fillStyle = "#8494A6";
-        ctx.font = "14px 'PingFang SC','Microsoft YaHei',sans-serif";
-        y = wrapText(ctx, line.replace("> ", ""), 48, y, maxW, 24);
-        y += 10;
-      } else if (/^\d+\.\s/.test(line)) {
-        y += 4;
-        ctx.fillStyle = "#55677A";
-        ctx.font = "16px 'PingFang SC','Microsoft YaHei',sans-serif";
-        y = wrapText(ctx, line, 48, y, maxW, 26);
-        y += 8;
-      } else if (line.trim() === "") {
-        y += 16;
-      } else if (line.startsWith("- ")) {
-        y += 4;
-        ctx.fillStyle = "#55677A";
-        ctx.font = "15px 'PingFang SC','Microsoft YaHei',sans-serif";
-        y = wrapText(ctx, line, 48, y, maxW, 26);
-        y += 6;
-      } else {
-        ctx.fillStyle = "#55677A";
-        ctx.font = "16px 'PingFang SC','Microsoft YaHei',sans-serif";
-        y = wrapText(ctx, line, 48, y, maxW, 26);
-        y += 6;
+      if (y > A4H - 180) break;
+      if (line.startsWith("## 改善建议")) {
+        inTips = true;
+        continue;
       }
-      if (y > A4H - 140) {
-        // 已满，进入下一页（简化：停止）
-        break;
+      if (line.startsWith("## 健康展望")) {
+        // 进入 AI 解读章节
+        y += 16;
+        y = drawSectionTitle(ctx, "四", "AI 智能解读", y - 12);
+        y = drawParagraph(ctx, "以下是系统基于您的评估结果生成的智能解读分析：", y + 6);
+        y += 8;
+        continue;
+      }
+      if (inTips && /^\d+\.\s/.test(line)) {
+        tipNum++;
+        const text = line.replace(/^\d+\.\s/, "");
+        ctx.fillStyle = "#0A5BA8";
+        ctx.beginPath();
+        ctx.arc(MARGIN + 12, y - 4, 11, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#FFFFFF";
+        ctx.font = "700 12px 'PingFang SC','Microsoft YaHei',sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(String(tipNum), MARGIN + 12, y - 4);
+        ctx.fillStyle = "#2B3A48";
+        ctx.font = "13px 'PingFang SC','Microsoft YaHei',sans-serif";
+        ctx.textAlign = "left";
+        ctx.textBaseline = "alphabetic";
+        y = wrapText(ctx, text, MARGIN + 32, y, A4W - MARGIN * 2 - 32, 22);
+        y += 10;
+      } else if (line.startsWith("## ")) {
+        y += 10;
+        ctx.fillStyle = "#0A5BA8";
+        ctx.font = "700 15px 'PingFang SC','Microsoft YaHei',sans-serif";
+        ctx.textAlign = "left";
+        ctx.textBaseline = "alphabetic";
+        ctx.fillText(line.replace("## ", ""), MARGIN, y);
+        y += 22;
+      } else if (line.startsWith("> ")) {
+        y += 4;
+        ctx.fillStyle = "#8494A6";
+        ctx.font = "12px 'PingFang SC','Microsoft YaHei',sans-serif";
+        y = wrapText(ctx, line.replace("> ", ""), MARGIN + 16, y, A4W - MARGIN * 2 - 16, 20);
+        y += 8;
+      } else if (line.startsWith("- ")) {
+        ctx.fillStyle = "#55677A";
+        ctx.font = "13px 'PingFang SC','Microsoft YaHei',sans-serif";
+        ctx.fillText("•", MARGIN + 8, y);
+        y = wrapText(ctx, line.replace("- ", ""), MARGIN + 24, y, A4W - MARGIN * 2 - 24, 22);
+        y += 6;
+      } else if (line.trim() === "") {
+        y += 10;
+      } else {
+        y = drawParagraph(ctx, line, y, false);
+        y += 6;
       }
     }
 
-    drawFooter(ctx, 3);
-    pages.push(canvas.toDataURL("image/jpeg", 0.9));
+    // 底部二维码
+    if (y < A4H - 160) {
+      const qrUrl = `${siteUrl}/questionnaire`;
+      const qrDataUrl = await QRCode.toDataURL(qrUrl, {
+        width: 160,
+        margin: 1,
+        color: { dark: "#063D70", light: "#FFFFFF" },
+      });
+      const qrImg = new Image();
+      await new Promise<void>((resolve) => {
+        qrImg.onload = () => resolve();
+        qrImg.onerror = () => resolve();
+        qrImg.src = qrDataUrl;
+      });
+      const qrY = A4H - 130;
+      ctx.drawImage(qrImg, MARGIN, qrY, 80, 80);
+      ctx.fillStyle = "#0A5BA8";
+      ctx.font = "700 14px 'PingFang SC','Microsoft YaHei',sans-serif";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "alphabetic";
+      ctx.fillText("扫码立即测试评估", MARGIN + 96, qrY + 30);
+      ctx.fillStyle = "#8494A6";
+      ctx.font = "11px 'PingFang SC','Microsoft YaHei',sans-serif";
+      ctx.fillText("你也来测一测自己的健康寿命指数", MARGIN + 96, qrY + 52);
+      ctx.fillText(qrUrl, MARGIN + 96, qrY + 70);
+    }
+
+    drawDocFooter(ctx, 4, TOTAL, dateStr);
+    pages.push(canvas.toDataURL("image/jpeg", 0.92));
   }
 
   return pages;
