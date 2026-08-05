@@ -13,7 +13,7 @@ export interface AuthUser {
   id: number;
   email: string;
   name: string;
-  role: "user" | "admin";
+  role: "user" | "admin" | "health_coach";
 }
 
 interface AuthContextType {

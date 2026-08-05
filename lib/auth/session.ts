@@ -6,7 +6,7 @@ import { findUserById, type UserRow } from "@/lib/db";
 export interface SessionPayload {
   userId: number;
   email: string;
-  role: "user" | "admin";
+  role: "user" | "admin" | "health_coach";
 }
 
 const secret = new TextEncoder().encode(

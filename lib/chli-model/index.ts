@@ -78,6 +78,7 @@ export function calculateCHLI(input: AssessmentInput): AssessmentResult {
     bioAge: bio.result,
     fshi,
     createdAt: new Date().toISOString(),
+    reportCode: generateReportCode(),
   };
 }
 
@@ -89,3 +90,13 @@ export function getAssessmentLabel(chliScore: number): string {
 export * from "./types";
 export * from "./scorer";
 export { RISK_META, RISK_LEVELS, clampScore, levelFromScore } from "./normalization";
+
+/** 生成报告唯一编码，格式：CHLI-YYMMDD-XXXXXX */
+export function generateReportCode(): string {
+  const d = new Date();
+  const ymd = `${String(d.getFullYear()).slice(2)}${String(d.getMonth() + 1).padStart(2, "0")}${String(
+    d.getDate()
+  ).padStart(2, "0")}`;
+  const rand = Math.random().toString(36).slice(2, 8).toUpperCase().padEnd(6, "0");
+  return `CHLI-${ymd}-${rand}`;
+}

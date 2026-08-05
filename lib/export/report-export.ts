@@ -424,6 +424,13 @@ export async function exportShareImage(
   ctx.textAlign = "center";
   ctx.fillText("健康数据仅供参考，不构成医疗建议 · 请及时就医", W / 2, headerH + bodyH + footerH - 32);
 
+  // 报告唯一编码（灰色小字，不显眼）
+  if (result.reportCode) {
+    ctx.fillStyle = "#B8C4D2";
+    ctx.font = "13px 'PingFang SC','Microsoft YaHei',sans-serif";
+    ctx.fillText(`报告编号：${result.reportCode}`, W / 2, headerH + bodyH + footerH - 12);
+  }
+
   const dataUrl = canvas.toDataURL("image/png");
   const link = document.createElement("a");
   link.download = "长寿指数分享.png";
@@ -661,6 +668,7 @@ export async function generateA4Pages(
     y += 30;
     const infoRows: [string, string][] = [
       ["报告名称", "长寿指数评估报告"],
+      ["报告编码", result.reportCode || "—"],
       ["评估模型", "中国百岁健康标准指数（CHLI）"],
       ["生成日期", dateStr],
       ["综合指数", `${score} / 100`],

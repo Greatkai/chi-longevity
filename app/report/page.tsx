@@ -23,6 +23,7 @@ import { DimensionBars } from "@/components/report/DimensionBars";
 import { InsightsCard } from "@/components/report/InsightsCard";
 import { ExportPanel } from "@/components/report/ExportPanel";
 import { CalcDetails } from "@/components/report/CalcDetails";
+import { CoachInterpretation } from "@/components/report/CoachInterpretation";
 
 export default function ReportPage() {
   const router = useRouter();
@@ -138,7 +139,15 @@ export default function ReportPage() {
               </div>
             </div>
             <div className="hidden text-right sm:block">
-              <div className="text-xs text-ink-400">报告生成时间</div>
+              {result.reportCode && (
+                <>
+                  <div className="text-xs text-ink-400">报告编码</div>
+                  <div className="font-mono text-xs font-semibold text-brand-600">
+                    {result.reportCode}
+                  </div>
+                </>
+              )}
+              <div className="mt-1 text-xs text-ink-400">报告生成时间</div>
               <div className="text-sm font-semibold text-brand-700">
                 {new Date(result.createdAt || Date.now()).toLocaleString("zh-CN", {
                   year: "numeric",
@@ -326,6 +335,13 @@ export default function ReportPage() {
         <div className="mt-8">
           <InsightsCard result={result} />
         </div>
+
+        {/* 健康管理师人工解读 */}
+        {result.reportCode && (
+          <div className="mt-8">
+            <CoachInterpretation reportCode={result.reportCode} />
+          </div>
+        )}
 
         {/* FSHI 附加模块 */}
         {result.fshi && (

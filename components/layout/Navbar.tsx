@@ -28,6 +28,9 @@ export function Navbar() {
   const authLinks = user
     ? [
         { href: "/history", label: "我的报告", icon: History },
+        ...(user.role === "health_coach" || user.role === "admin"
+          ? [{ href: "/coach", label: "工作台", icon: Stethoscope }]
+          : []),
         ...(user.role === "admin"
           ? [{ href: "/admin", label: "管理后台", icon: ShieldCheck }]
           : []),

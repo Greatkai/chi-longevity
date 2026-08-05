@@ -184,6 +184,8 @@ export interface AssessmentResult {
   fshi: DimensionScore | null;
   /** 生成时间 */
   createdAt: string;
+  /** 报告唯一编码（用于健康管理师检索） */
+  reportCode: string;
 }
 
 /** 风险等级元数据 */

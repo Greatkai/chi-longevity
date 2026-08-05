@@ -16,7 +16,8 @@ export async function POST(req: NextRequest) {
     if (typeof chliScore !== "number" || !level || !payload) {
       return NextResponse.json({ error: "参数不完整" }, { status: 400 });
     }
-    const report = await saveReport(user.id, chliScore, String(level), payload);
+    const reportCode = String(payload?.reportCode || "");
+    const report = await saveReport(user.id, chliScore, String(level), payload, reportCode);
     return NextResponse.json({ report });
   } catch (e) {
     console.error("保存报告失败:", e);

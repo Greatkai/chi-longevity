@@ -18,6 +18,7 @@ import {
   Clock,
   Gauge,
   ClipboardList,
+  Stethoscope,
 } from "lucide-react";
 import {
   LineChart,
@@ -41,7 +42,7 @@ interface AdminUser {
   id: number;
   email: string;
   name: string;
-  role: "user" | "admin";
+  role: "user" | "admin" | "health_coach";
   status: "active" | "disabled";
   createdAt: string;
   lastLoginAt: string | null;
@@ -142,6 +143,24 @@ export default function AdminPage() {
         body: JSON.stringify({
           status: u.status === "active" ? "disabled" : "active",
         }),
+      });
+      if (res.ok) await loadData();
+    } catch {
+      // ignore
+    } finally {
+      setOperating(null);
+    }
+  };
+
+  /** 切换用户角色（普通用户 <-> 健康管理师） */
+  const toggleRole = async (u: AdminUser) => {
+    const nextRole = u.role === "health_coach" ? "user" : "health_coach";
+    setOperating(u.id);
+    try {
+      const res = await fetch(`/api/admin/users/${u.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: nextRole }),
       });
       if (res.ok) await loadData();
     } catch {
@@ -549,10 +568,16 @@ export default function AdminPage() {
                         className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
                           u.role === "admin"
                             ? "bg-violet-100 text-violet-700"
+                            : u.role === "health_coach"
+                            ? "bg-teal-100 text-teal-700"
                             : "bg-brand-100 text-brand-700"
                         }`}
                       >
-                        {u.role === "admin" ? "管理员" : "普通用户"}
+                        {u.role === "admin"
+                          ? "管理员"
+                          : u.role === "health_coach"
+                          ? "健康管理师"
+                          : "普通用户"}
                       </span>
                     </td>
                     <td className="px-5 py-4">
@@ -586,6 +611,14 @@ export default function AdminPage() {
                             <UserCheck className="h-3.5 w-3.5" />
                           )}
                           {u.status === "active" ? "禁用" : "启用"}
+                        </button>
+                        <button
+                          onClick={() => toggleRole(u)}
+                          disabled={operating === u.id || u.id === user?.id || u.role === "admin"}
+                          className="inline-flex items-center gap-1 rounded-lg border border-teal-200 bg-white px-3 py-1.5 text-xs font-medium text-teal-700 transition-colors hover:bg-teal-50 disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          <Stethoscope className="h-3.5 w-3.5" />
+                          {u.role === "health_coach" ? "设为普通用户" : "设为健康管理师"}
                         </button>
                         <button
                           onClick={() => handleDelete(u)}

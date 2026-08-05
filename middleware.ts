@@ -9,7 +9,7 @@ const COOKIE_NAME = "chi_session";
 interface SessionPayload {
   userId: number;
   email: string;
-  role: "user" | "admin";
+  role: "user" | "admin" | "health_coach";
 }
 
 async function verifyToken(token: string): Promise<SessionPayload | null> {
@@ -25,6 +25,8 @@ async function verifyToken(token: string): Promise<SessionPayload | null> {
 const PROTECTED = ["/history"];
 /** 需要 admin 角色的路由 */
 const ADMIN_ONLY = ["/admin"];
+/** 需要 admin 或健康管理师角色的路由 */
+const COACH_ONLY = ["/coach"];
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
@@ -37,12 +39,22 @@ export async function middleware(req: NextRequest) {
   const isAdminOnly = ADMIN_ONLY.some(
     (p) => pathname === p || pathname.startsWith(p + "/")
   );
+  const isCoachOnly = COACH_ONLY.some(
+    (p) => pathname === p || pathname.startsWith(p + "/")
+  );
 
   if (isAdminOnly) {
     if (!session) {
       return NextResponse.redirect(new URL("/login?next=/admin", req.url));
     }
     if (session.role !== "admin") {
+      return NextResponse.redirect(new URL("/", req.url));
+    }
+  } else if (isCoachOnly) {
+    if (!session) {
+      return NextResponse.redirect(new URL("/login?next=/coach", req.url));
+    }
+    if (session.role !== "health_coach" && session.role !== "admin") {
       return NextResponse.redirect(new URL("/", req.url));
     }
   } else if (isProtected) {
@@ -57,5 +69,12 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/history", "/history/:path*", "/admin", "/admin/:path*"],
+  matcher: [
+    "/history",
+    "/history/:path*",
+    "/admin",
+    "/admin/:path*",
+    "/coach",
+    "/coach/:path*",
+  ],
 };

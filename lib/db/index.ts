@@ -43,7 +43,7 @@ export interface UserRow {
   email: string;
   password_hash: string;
   name: string;
-  role: "user" | "admin";
+  role: "user" | "admin" | "health_coach";
   status: "active" | "disabled";
   created_at: string;
   last_login_at: string | null;
@@ -55,6 +55,10 @@ export interface ReportRow {
   chli_score: number;
   level: string;
   payload: string;
+  /** 报告唯一编码 */
+  report_code: string;
+  /** 健康管理师人工解读（Markdown） */
+  coach_interpretation: string | null;
   created_at: string;
 }
 
@@ -76,7 +80,7 @@ export async function createUser(
   email: string,
   password: string,
   name: string,
-  role: "user" | "admin" = "user"
+  role: "user" | "admin" | "health_coach" = "user"
 ): Promise<UserRow> {
   const passwordHash = bcrypt.hashSync(password, 10);
   const { rows } = await pool.query(
@@ -112,13 +116,14 @@ export async function saveReport(
   userId: number,
   chliScore: number,
   level: string,
-  payload: unknown
+  payload: unknown,
+  reportCode: string
 ): Promise<ReportRow> {
   const { rows } = await pool.query(
-    `INSERT INTO reports (user_id, chli_score, level, payload)
-     VALUES ($1, $2, $3, $4)
+    `INSERT INTO reports (user_id, chli_score, level, payload, report_code)
+     VALUES ($1, $2, $3, $4, $5)
      RETURNING *`,
-    [userId, chliScore, level, JSON.stringify(payload)]
+    [userId, chliScore, level, JSON.stringify(payload), reportCode]
   );
   return rows[0] as ReportRow;
 }
@@ -126,6 +131,35 @@ export async function saveReport(
 export async function getReportById(id: number): Promise<ReportRow | undefined> {
   const { rows } = await pool.query("SELECT * FROM reports WHERE id = $1", [id]);
   return rows[0] as ReportRow | undefined;
+}
+
+/** 通过报告编码查询报告（健康管理师用） */
+export async function getReportByCode(code: string): Promise<
+  | (ReportRow & { userName: string; userEmail: string })
+  | undefined
+> {
+  const { rows } = await pool.query(
+    `SELECT r.*, u.name as "userName", u.email as "userEmail"
+     FROM reports r
+     JOIN users u ON u.id = r.user_id
+     WHERE LOWER(r.report_code) = LOWER($1)
+     LIMIT 1`,
+    [code]
+  );
+  return rows[0] as (ReportRow & { userName: string; userEmail: string }) | undefined;
+}
+
+/** 保存/更新健康管理师人工解读 */
+export async function saveCoachInterpretation(
+  code: string,
+  markdown: string
+): Promise<boolean> {
+  const { rowCount } = await pool.query(
+    `UPDATE reports SET coach_interpretation = $1
+     WHERE LOWER(report_code) = LOWER($2)`,
+    [markdown, code]
+  );
+  return (rowCount ?? 0) > 0;
 }
 
 export async function listReportsByUser(userId: number): Promise<ReportRow[]> {
