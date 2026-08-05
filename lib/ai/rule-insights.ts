@@ -1,10 +1,40 @@
 import type { AssessmentResult } from "@/lib/chli-model";
 import { RISK_META } from "@/lib/chli-model";
+import { LAB_CHECKLIST } from "@/lib/chli-model/sub-indicators";
+
+/** 检验项到 available 路径的映射 */
+const LAB_AVAILABLE_PATHS: Record<string, string> = {
+  B2: "bio.epigeneticAge.available",
+  B3: "bio.inflammation.available",
+  M1: "metabolic.hba1c.available",
+  M2: "metabolic.ldl.available",
+  M5: "metabolic.liverKidney.available",
+  F2: "functional.gaitSpeed.available",
+  F3: "functional.gripStrength.available",
+  F4: "functional.balance.available",
+  F5: "functional.cognitiveTest.available",
+  D3: "digital.improvingTrend.available",
+};
+
+/** 判断某检验项是否已提供（基于报告 sourceData） */
+function hasLabProvided(sourceData: Record<string, unknown> | undefined, subKey: string): boolean {
+  if (!sourceData) return false;
+  const p = LAB_AVAILABLE_PATHS[subKey];
+  if (!p) return false;
+  const keys = p.split(".");
+  let cur: unknown = sourceData;
+  for (const k of keys) {
+    if (cur == null || typeof cur !== "object") return false;
+    cur = (cur as Record<string, unknown>)[k];
+  }
+  return cur === 1 || cur === true;
+}
 
 /** 基于规则的本地解读生成（AI 不可用时的兜底） */
 export function generateRuleInsights(r: AssessmentResult): string {
   const meta = RISK_META[r.level];
   const lines: string[] = [];
+  const sourceData = (r as unknown as { sourceData?: Record<string, unknown> })?.sourceData;
 
   // 总体评估
   lines.push(`## 总体评估`);
@@ -74,6 +104,18 @@ export function generateRuleInsights(r: AssessmentResult): string {
   const tips = buildTips(weak.key, sorted.map((s) => s.key));
   tips.forEach((t, i) => lines.push(`${i + 1}. ${t}`));
   lines.push("");
+
+  // 建议完善检查（基于缺失的检验项）
+  const missingLabs = LAB_CHECKLIST.filter((item) => !hasLabProvided(sourceData, item.subKey));
+  if (missingLabs.length > 0) {
+    lines.push(`## 建议完善检查`);
+    lines.push(`为让评估结果更精准，建议您补充以下检验/检查项目（可前往医院体检或门诊开具）：`);
+    missingLabs.forEach((item) => {
+      lines.push(`- **${item.name}**（${item.dimension} 维度）：${item.tests}`);
+    });
+    lines.push(`> 提示：补充检验数据后重新评估，可显著提高各项指数与风险评估的准确性。`);
+    lines.push("");
+  }
 
   // 健康展望
   lines.push(`## 健康展望`);

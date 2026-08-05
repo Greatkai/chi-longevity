@@ -47,12 +47,23 @@ export function CalcDetails({ result }: Props) {
   const [expandedSub, setExpandedSub] = useState<string | null>(null);
   const { data } = useAssessment();
 
-  /** 读取用户是否勾选了某检验项 */
+  /**
+   * 读取用户是否勾选了某检验项。
+   * 优先使用报告自身保存的 sourceData（查看既往报告时），
+   * 其次使用当前会话 data（刚评估完的场景）。
+   */
+  const sourceData = (result as unknown as { sourceData?: Record<string, unknown> })
+    ?.sourceData;
+  const effectiveData =
+    sourceData && Object.keys(sourceData).length > 0
+      ? (sourceData as unknown as Record<string, unknown>)
+      : (data as unknown as Record<string, unknown>);
+
   const hasLab = (subKey: string): boolean => {
     const p = LAB_AVAILABLE_PATHS[subKey];
     if (!p) return false;
     const keys = p.split(".");
-    let cur: Record<string, unknown> = data as unknown as Record<string, unknown>;
+    let cur: Record<string, unknown> = effectiveData;
     for (const k of keys) {
       if (cur == null) return false;
       cur = cur[k] as Record<string, unknown>;
