@@ -585,8 +585,8 @@ export async function generateA4Pages(
   const dims = result.dimensions;
   const dateStr = new Date(result.createdAt || Date.now()).toLocaleDateString("zh-CN");
   const pages: string[] = [];
-  // 总页数 = 5 基础页 + (有管理师解读则 +1 总结页)
-  const TOTAL = 5 + (coachInterpretation ? 1 : 0);
+  // 总页数恒为 5：第5页根据是否有人工解读显示「AI解读」或「人工解读总结」
+  const TOTAL = 5;
 
   /* ========== 第 1 页：封面 ========== */
   {
@@ -865,7 +865,7 @@ export async function generateA4Pages(
     pages.push(canvas.toDataURL("image/jpeg", 0.92));
   }
 
-  /* ========== 第 5 页：AI 智能解读 ========== */
+  /* ========== 第 5 页：AI 智能解读 / 人工解读总结 ========== */
   {
     const { canvas, ctx } = createA4Canvas();
     ctx.fillStyle = "#FFFFFF";
@@ -873,39 +873,66 @@ export async function generateA4Pages(
     drawDocHeader(ctx);
 
     let y = 80;
-    y = drawSectionTitle(ctx, "四", "AI 智能解读", y);
-    y = drawParagraph(ctx, "以下是系统基于您的评估结果生成的智能解读与健康展望：", y + 6);
+    // 有人工解读时，用人工解读替换 AI 解读
+    const hasCoach = coachInterpretation && coachInterpretation.trim();
+    y = drawSectionTitle(ctx, "四", hasCoach ? "健康管理师总结" : "AI 智能解读", y);
+    y = drawParagraph(
+      ctx,
+      hasCoach
+        ? "以下是健康管理师对本报告的人工解读与综合建议："
+        : "以下是系统基于您的评估结果生成的智能解读与健康展望：",
+      y + 6
+    );
     y += 10;
 
-    const insights = generateRuleInsights(result);
-    const lines = insights.split("\n");
-    let startAI = false;
-    for (const line of lines) {
-      if (y > A4H - 160) break;
-      if (line.startsWith("## 健康展望")) { startAI = true; continue; }
-      if (!startAI) continue;
-      if (line.startsWith("> ")) {
-        y += 4;
-        ctx.fillStyle = "#8494A6";
-        ctx.font = "11px 'PingFang SC','Microsoft YaHei',sans-serif";
-        y = wrapText(ctx, line.replace("> ", ""), MARGIN + 16, y, A4W - MARGIN * 2 - 16, 18);
-        y += 8;
-      } else if (line.trim() === "") {
-        y += 10;
-      } else if (line.startsWith("- ")) {
-        ctx.fillStyle = "#55677A";
-        ctx.font = "12px 'PingFang SC','Microsoft YaHei',sans-serif";
-        ctx.fillText("•", MARGIN + 8, y);
-        y = wrapText(ctx, line.replace("- ", ""), MARGIN + 24, y, A4W - MARGIN * 2 - 24, 20);
-        y += 6;
-      } else {
-        // 使用更紧凑的字体与行距
-        ctx.fillStyle = "#2B3A48";
-        ctx.font = "12px 'PingFang SC','Microsoft YaHei',sans-serif";
-        ctx.textAlign = "left";
-        ctx.textBaseline = "alphabetic";
-        y = wrapText(ctx, "    " + line, MARGIN, y, A4W - MARGIN * 2, 20);
-        y += 6;
+    if (hasCoach) {
+      // 渲染人工解读（简化 markdown）
+      const text = stripMarkdown(coachInterpretation);
+      const lines = text.split("\n");
+      for (const line of lines) {
+        if (y > A4H - 160) break;
+        if (line.trim() === "") {
+          y += 12;
+        } else {
+          ctx.fillStyle = "#2B3A48";
+          ctx.font = "12px 'PingFang SC','Microsoft YaHei',sans-serif";
+          ctx.textAlign = "left";
+          ctx.textBaseline = "alphabetic";
+          y = wrapText(ctx, line, MARGIN, y, A4W - MARGIN * 2, 20);
+          y += 8;
+        }
+      }
+    } else {
+      const insights = generateRuleInsights(result);
+      const lines = insights.split("\n");
+      let startAI = false;
+      for (const line of lines) {
+        if (y > A4H - 160) break;
+        if (line.startsWith("## 健康展望")) { startAI = true; continue; }
+        if (!startAI) continue;
+        if (line.startsWith("> ")) {
+          y += 4;
+          ctx.fillStyle = "#8494A6";
+          ctx.font = "11px 'PingFang SC','Microsoft YaHei',sans-serif";
+          y = wrapText(ctx, line.replace("> ", ""), MARGIN + 16, y, A4W - MARGIN * 2 - 16, 18);
+          y += 8;
+        } else if (line.trim() === "") {
+          y += 10;
+        } else if (line.startsWith("- ")) {
+          ctx.fillStyle = "#55677A";
+          ctx.font = "12px 'PingFang SC','Microsoft YaHei',sans-serif";
+          ctx.fillText("•", MARGIN + 8, y);
+          y = wrapText(ctx, line.replace("- ", ""), MARGIN + 24, y, A4W - MARGIN * 2 - 24, 20);
+          y += 6;
+        } else {
+          // 使用更紧凑的字体与行距
+          ctx.fillStyle = "#2B3A48";
+          ctx.font = "12px 'PingFang SC','Microsoft YaHei',sans-serif";
+          ctx.textAlign = "left";
+          ctx.textBaseline = "alphabetic";
+          y = wrapText(ctx, "    " + line, MARGIN, y, A4W - MARGIN * 2, 20);
+          y += 6;
+        }
       }
     }
 
@@ -935,39 +962,6 @@ export async function generateA4Pages(
     ctx.fillText(qrUrl, MARGIN + 86, qrY + 62);
 
     drawDocFooter(ctx, 5, TOTAL, dateStr);
-    pages.push(canvas.toDataURL("image/jpeg", 0.92));
-  }
-
-  /* ========== 第 6 页：健康管理师总结（如有人工解读） ========== */
-  if (coachInterpretation && coachInterpretation.trim()) {
-    const { canvas, ctx } = createA4Canvas();
-    ctx.fillStyle = "#FFFFFF";
-    ctx.fillRect(0, 0, A4W, A4H);
-    drawDocHeader(ctx);
-
-    let y = 80;
-    y = drawSectionTitle(ctx, "五", "健康管理师总结", y);
-    y = drawParagraph(ctx, "以下为健康管理师对本报告的人工解读与综合建议：", y + 6);
-    y += 10;
-
-    // 简化 markdown：去掉标记符号，按段落绘制
-    const text = stripMarkdown(coachInterpretation);
-    const lines = text.split("\n");
-    for (const line of lines) {
-      if (y > A4H - 150) break;
-      if (line.trim() === "") {
-        y += 12;
-      } else {
-        ctx.fillStyle = "#2B3A48";
-        ctx.font = "12px 'PingFang SC','Microsoft YaHei',sans-serif";
-        ctx.textAlign = "left";
-        ctx.textBaseline = "alphabetic";
-        y = wrapText(ctx, line, MARGIN, y, A4W - MARGIN * 2, 20);
-        y += 8;
-      }
-    }
-
-    drawDocFooter(ctx, 6, TOTAL, dateStr);
     pages.push(canvas.toDataURL("image/jpeg", 0.92));
   }
 

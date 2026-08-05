@@ -31,6 +31,8 @@ export default function ReportPage() {
   const { user } = useAuth();
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
+  // 是否有人工解读（有则隐藏 AI 解读）
+  const [hasCoach, setHasCoach] = useState(false);
   // 记录是否已自动保存，避免重复保存
   const autoSavedRef = useRef(false);
 
@@ -307,7 +309,10 @@ export default function ReportPage() {
         {/* 健康管理师人工解读（关键解读，紧跟在综合得分下方） */}
         {result.reportCode && (
           <div className="mt-8">
-            <CoachInterpretation reportCode={result.reportCode} />
+            <CoachInterpretation
+              reportCode={result.reportCode}
+              onHasContent={setHasCoach}
+            />
           </div>
         )}
 
@@ -394,7 +399,8 @@ export default function ReportPage() {
 
         {/* AI 解读 */}
         <div className="mt-8">
-          <InsightsCard result={result} />
+          {/* 有人工解读时不再展示 AI 智能解读与建议 */}
+          {!hasCoach && <InsightsCard result={result} />}
         </div>
 
         {/* FSHI 附加模块 */}

@@ -6,10 +6,12 @@ import { Markdown } from "@/components/Markdown";
 
 interface Props {
   reportCode: string;
+  /** 回调：是否有人工解读（用于父组件隐藏 AI 解读） */
+  onHasContent?: (has: boolean) => void;
 }
 
 /** 客户报告页展示健康管理师人工解读 */
-export function CoachInterpretation({ reportCode }: Props) {
+export function CoachInterpretation({ reportCode, onHasContent }: Props) {
   const [content, setContent] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -20,10 +22,15 @@ export function CoachInterpretation({ reportCode }: Props) {
         const res = await fetch(`/api/coach/interpretation?code=${encodeURIComponent(reportCode)}`);
         const json = await res.json();
         if (!cancelled) {
-          setContent(json?.coachInterpretation || null);
+          const has = !!json?.coachInterpretation;
+          setContent(has ? json.coachInterpretation : null);
+          onHasContent?.(has);
         }
       } catch {
-        if (!cancelled) setContent(null);
+        if (!cancelled) {
+          setContent(null);
+          onHasContent?.(false);
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -31,7 +38,7 @@ export function CoachInterpretation({ reportCode }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [reportCode]);
+  }, [reportCode, onHasContent]);
 
   if (loading) {
     return (
