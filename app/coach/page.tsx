@@ -386,10 +386,19 @@ export default function CoachPage() {
                 </div>
                 {showAI && (
                   <div className="max-h-[400px] overflow-y-auto p-6">
-                    <div className="mb-3 flex justify-end">
+                    <div className="mb-3 flex justify-end gap-2">
+                      <button
+                        onClick={() => setMarkdown(aiInsight)}
+                        disabled={!aiInsight}
+                        className="inline-flex items-center gap-1 rounded-lg border border-brand-300 bg-brand-50 px-2.5 py-1 text-[11px] font-medium text-brand-700 transition-colors hover:bg-brand-100 disabled:opacity-40"
+                      >
+                        <PenLine className="h-3 w-3" />
+                        导入到解读
+                      </button>
                       <button
                         onClick={() => navigator.clipboard.writeText(aiInsight)}
-                        className="inline-flex items-center gap-1 rounded-lg border border-brand-100 px-2.5 py-1 text-[11px] text-ink-500 transition-colors hover:bg-brand-50"
+                        disabled={!aiInsight}
+                        className="inline-flex items-center gap-1 rounded-lg border border-brand-100 px-2.5 py-1 text-[11px] text-ink-500 transition-colors hover:bg-brand-50 disabled:opacity-40"
                       >
                         复制 Markdown
                       </button>

@@ -119,9 +119,16 @@ export async function saveReport(
   payload: unknown,
   reportCode: string
 ): Promise<ReportRow> {
+  // 使用 report_code 做 upsert：已存在则更新，避免重复保存产生多条记录
   const { rows } = await pool.query(
     `INSERT INTO reports (user_id, chli_score, level, payload, report_code)
      VALUES ($1, $2, $3, $4, $5)
+     ON CONFLICT (report_code)
+     DO UPDATE SET
+       user_id = EXCLUDED.user_id,
+       chli_score = EXCLUDED.chli_score,
+       level = EXCLUDED.level,
+       payload = EXCLUDED.payload
      RETURNING *`,
     [userId, chliScore, level, JSON.stringify(payload), reportCode]
   );
