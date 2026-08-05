@@ -29,7 +29,7 @@ interface SearchResult {
     chliScore: number;
     level: string;
     label: string;
-    dimensions: { key: string; name: string; score: number; weight: number; level: string }[];
+    dimensions: { key: string; name: string; score: number; weight: number; level: string; details?: Record<string, number> }[];
     bioAge: { actualAge: number; biologicalAge: number; ageGap: number };
   } | null;
 }
@@ -238,21 +238,82 @@ export default function CoachPage() {
                   </div>
                 </div>
 
+                {/* 生物年龄对比 */}
+                {report.result?.bioAge && (
+                  <div className="mt-4">
+                    <h3 className="mb-2 text-xs font-semibold text-ink-500">生物年龄对比</h3>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="rounded-xl border border-brand-100 bg-white p-3 text-center">
+                        <div className="text-[11px] text-ink-500">实际年龄</div>
+                        <div className="text-xl font-bold text-ink-900">
+                          {report.result.bioAge.actualAge}
+                          <span className="text-xs text-ink-400"> 岁</span>
+                        </div>
+                      </div>
+                      <div
+                        className="rounded-xl border p-3 text-center"
+                        style={{ backgroundColor: `${levelColor}10`, borderColor: `${levelColor}40` }}
+                      >
+                        <div className="text-[11px] text-ink-500">生物年龄</div>
+                        <div className="text-xl font-bold" style={{ color: levelColor }}>
+                          {report.result.bioAge.biologicalAge}
+                          <span className="text-xs text-ink-400"> 岁</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div
+                      className="mt-2 rounded-lg px-3 py-2 text-xs font-medium"
+                      style={{ backgroundColor: `${levelColor}12`, color: levelColor }}
+                    >
+                      {report.result.bioAge.ageGap < 0
+                        ? `生物年龄比实际年龄年轻 ${Math.abs(report.result.bioAge.ageGap)} 岁`
+                        : report.result.bioAge.ageGap > 2
+                        ? `生物年龄比实际年龄大 ${report.result.bioAge.ageGap} 岁`
+                        : "生物年龄与实际年龄基本相当"}
+                    </div>
+                  </div>
+                )}
+
                 {/* 维度得分 */}
                 {report.result?.dimensions && (
                   <div className="mt-4">
-                    <h3 className="mb-2 text-xs font-semibold text-ink-500">维度得分</h3>
-                    <div className="space-y-2">
+                    <h3 className="mb-2 text-xs font-semibold text-ink-500">六大维度得分</h3>
+                    <div className="space-y-2.5">
                       {report.result.dimensions.map((d) => (
-                        <div key={d.key} className="flex items-center gap-2">
-                          <span className="w-5 text-xs font-bold text-brand-700">{d.key}</span>
-                          <div className="h-2 flex-1 overflow-hidden rounded-full bg-brand-100">
+                        <div key={d.key}>
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="font-semibold text-ink-800">
+                              {d.key} · {d.name}
+                            </span>
+                            <span className="flex items-center gap-2">
+                              <span
+                                className="rounded-full px-2 py-0.5 text-[10px] font-bold text-white"
+                                style={{ backgroundColor: LEVEL_COLORS[d.level] || "#3186D8" }}
+                              >
+                                {LEVEL_LABELS[d.level] || d.level}
+                              </span>
+                              <span className="font-bold text-ink-900">{Math.round(d.score)}</span>
+                            </span>
+                          </div>
+                          <div className="mt-1 h-2 overflow-hidden rounded-full bg-brand-100">
                             <div
                               className="h-full rounded-full"
                               style={{ width: `${Math.round(d.score)}%`, backgroundColor: LEVEL_COLORS[d.level] || "#3186D8" }}
                             />
                           </div>
-                          <span className="w-8 text-right text-xs font-semibold">{Math.round(d.score)}</span>
+                          {/* 二级指标明细 */}
+                          {d.details && Object.keys(d.details).length > 0 && (
+                            <div className="mt-1 flex flex-wrap gap-1.5">
+                              {Object.entries(d.details).map(([k, v]) => (
+                                <span
+                                  key={k}
+                                  className="rounded bg-brand-50 px-1.5 py-0.5 text-[10px] text-ink-500"
+                                >
+                                  {k} <strong className="text-brand-700">{Math.round(v as number)}</strong>
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>

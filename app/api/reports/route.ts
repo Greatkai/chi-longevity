@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth/session";
 import { listReportsByUser, saveReport } from "@/lib/db";
+import { generateReportCode } from "@/lib/chli-model";
 
 export const runtime = "nodejs";
 
@@ -16,8 +17,14 @@ export async function POST(req: NextRequest) {
     if (typeof chliScore !== "number" || !level || !payload) {
       return NextResponse.json({ error: "参数不完整" }, { status: 400 });
     }
-    const reportCode = String(payload?.reportCode || "");
-    const report = await saveReport(user.id, chliScore, String(level), payload, reportCode);
+    // 报告编码：payload 中有则用，否则兜底生成
+    let reportCode = String(payload?.reportCode || "").trim();
+    if (!reportCode) {
+      reportCode = generateReportCode();
+    }
+    // 回写编码到 payload，保证前端可读取
+    const fullPayload = { ...payload, reportCode };
+    const report = await saveReport(user.id, chliScore, String(level), fullPayload, reportCode);
     return NextResponse.json({ report });
   } catch (e) {
     console.error("保存报告失败:", e);
@@ -38,6 +45,7 @@ export async function GET() {
       chliScore: r.chli_score,
       level: r.level,
       createdAt: r.created_at,
+      reportCode: r.report_code || "",
     })),
   });
 }
