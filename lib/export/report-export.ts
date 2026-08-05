@@ -212,7 +212,7 @@ export async function exportShareImage(
   ctx.font = "17px 'PingFang SC','Microsoft YaHei',sans-serif";
   ctx.fillText("—— 测一测你的长寿指数，扫码测一测 ——", W / 2, 452);
 
-  /* ---------- 内容主体 ---------- */
+  /* ---------- 内容主体：雷达图 ---------- */
   ctx.fillStyle = "#F0F6FC";
   ctx.fillRect(0, headerH, W, bodyH);
 
@@ -230,44 +230,140 @@ export async function exportShareImage(
   ctx.font = "700 28px 'PingFang SC','Microsoft YaHei',sans-serif";
   ctx.textAlign = "left";
   ctx.textBaseline = "alphabetic";
-  ctx.fillText("六大维度得分", 56, headerH + 78);
+  ctx.fillText("六大维度得分雷达", 56, headerH + 78);
 
-  const labelW = 280;
-  const barStartX = 56 + labelW + 24;
-  const scoreW2 = 80;
-  const barW = W - 56 * 2 - labelW - 24 - scoreW2;
-  const rowH = 72;
-  const startY = headerH + 116;
-  dims.forEach((d, i) => {
-    const c = LEVEL_COLORS[d.level] || "#3186D8";
-    const s = Math.round(d.score);
-    const y = startY + i * rowH;
+  /** 绘制雷达图 */
+  const radarCx = W / 2;
+  const radarCy = headerH + bodyH / 2 - 20;
+  const radarR = Math.min(W - 180, bodyH - 180) / 2;
+  const n = dims.length;
+  // 每个轴的角度（从顶部开始顺时针）
+  const axes: { angle: number; dim: typeof dims[0] }[] = dims.map((d, i) => ({
+    angle: -Math.PI / 2 + (i * 2 * Math.PI) / n,
+    dim: d,
+  }));
 
-    ctx.fillStyle = c;
+  // 网格层（20/40/60/80/100）
+  ctx.strokeStyle = "#E8F0FA";
+  ctx.lineWidth = 1;
+  for (let level = 1; level <= 5; level++) {
+    const r = (radarR * level) / 5;
     ctx.beginPath();
-    ctx.arc(40, y - 6, 7, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.fillStyle = "#12232E";
-    ctx.font = "600 22px 'PingFang SC','Microsoft YaHei',sans-serif";
-    ctx.textAlign = "left";
-    ctx.textBaseline = "alphabetic";
-    ctx.fillText(`${d.key} · ${d.name}`, 56, y);
-
-    ctx.fillStyle = "#DCE9F8";
-    roundRect(ctx, barStartX, y - 18, barW, 24, 12);
-    ctx.fill();
-    ctx.fillStyle = c;
-    const fillW = Math.max(0, (s / 100) * barW);
-    if (fillW > 0) {
-      roundRect(ctx, barStartX, y - 18, fillW, 24, 12);
-      ctx.fill();
+    for (let i = 0; i < n; i++) {
+      const x = radarCx + Math.cos(axes[i].angle) * r;
+      const y = radarCy + Math.sin(axes[i].angle) * r;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
     }
-    ctx.fillStyle = "#12232E";
-    ctx.font = "700 24px 'PingFang SC','Microsoft YaHei',sans-serif";
-    ctx.textAlign = "right";
-    ctx.fillText(String(s), W - 56, y);
+    ctx.closePath();
+    ctx.stroke();
+  }
+
+  // 轴线
+  ctx.strokeStyle = "#DCE9F8";
+  ctx.lineWidth = 1;
+  for (let i = 0; i < n; i++) {
+    ctx.beginPath();
+    ctx.moveTo(radarCx, radarCy);
+    ctx.lineTo(
+      radarCx + Math.cos(axes[i].angle) * radarR,
+      radarCy + Math.sin(axes[i].angle) * radarR
+    );
+    ctx.stroke();
+  }
+
+  // 等级刻度（中心圈上的 20/40/60/80/100）
+  ctx.fillStyle = "#8494A6";
+  ctx.font = "12px 'PingFang SC','Microsoft YaHei',sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  for (let level = 1; level <= 5; level++) {
+    const r = (radarR * level) / 5;
+    ctx.fillText(String(level * 20), radarCx, radarCy - r);
+  }
+
+  // 得分多边形（填充 + 描边 + 顶点圆点）
+  const scorePoints = axes.map((a) => {
+    const s = Math.max(0, Math.min(100, a.dim.score)) / 100;
+    return {
+      x: radarCx + Math.cos(a.angle) * radarR * s,
+      y: radarCy + Math.sin(a.angle) * radarR * s,
+      level: a.dim.level,
+      dim: a.dim,
+    };
   });
+
+  // 填充半透明渐变
+  const fillGrad = ctx.createRadialGradient(radarCx, radarCy, 0, radarCx, radarCy, radarR);
+  fillGrad.addColorStop(0, "rgba(49, 134, 216, 0.4)");
+  fillGrad.addColorStop(1, "rgba(49, 134, 216, 0.15)");
+  ctx.fillStyle = fillGrad;
+  ctx.beginPath();
+  for (let i = 0; i < n; i++) {
+    if (i === 0) ctx.moveTo(scorePoints[i].x, scorePoints[i].y);
+    else ctx.lineTo(scorePoints[i].x, scorePoints[i].y);
+  }
+  ctx.closePath();
+  ctx.fill();
+
+  // 描边
+  ctx.strokeStyle = "#3186D8";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  for (let i = 0; i < n; i++) {
+    if (i === 0) ctx.moveTo(scorePoints[i].x, scorePoints[i].y);
+    else ctx.lineTo(scorePoints[i].x, scorePoints[i].y);
+  }
+  ctx.closePath();
+  ctx.stroke();
+
+  // 顶点圆点
+  scorePoints.forEach((p) => {
+    ctx.fillStyle = "#FFFFFF";
+    ctx.strokeStyle = LEVEL_COLORS[p.level] || "#3186D8";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 7, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+  });
+
+  // 维度标签（轴外侧）
+  ctx.font = "600 18px 'PingFang SC','Microsoft YaHei',sans-serif";
+  ctx.textBaseline = "middle";
+  for (let i = 0; i < n; i++) {
+    const a = axes[i];
+    const labelR = radarR + 38;
+    const lx = radarCx + Math.cos(a.angle) * labelR;
+    const ly = radarCy + Math.sin(a.angle) * labelR;
+
+    // 标签背景
+    const c = LEVEL_COLORS[a.dim.level] || "#3186D8";
+    const s = Math.round(a.dim.score);
+
+    ctx.fillStyle = "#FFFFFF";
+    const labelText = `${a.dim.key} · ${a.dim.name}`;
+    const tw = ctx.measureText(labelText).width;
+    roundRect(ctx, lx - tw / 2 - 12, ly - 13, tw + 24, 26, 13);
+    ctx.fill();
+    ctx.strokeStyle = c;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // 标签文字
+    ctx.fillStyle = "#12232E";
+    ctx.font = "600 14px 'PingFang SC','Microsoft YaHei',sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(labelText, lx, ly);
+
+    // 分数（标签下方）
+    ctx.fillStyle = c;
+    ctx.font = "700 16px 'PingFang SC','Microsoft YaHei',sans-serif";
+    const scoreY = ly + (Math.abs(Math.sin(a.angle)) > 0.3 ? (a.angle > 0 ? 24 : -24) : 0);
+    const scoreXOff = Math.abs(Math.cos(a.angle)) > 0.7 ? (a.angle > 0 ? 0 : 0) : 0;
+    ctx.fillText(`${s}`, lx + scoreXOff, scoreY);
+  }
 
   /* ---------- 底部：二维码 ---------- */
   ctx.fillStyle = "#F0F6FC";
@@ -759,27 +855,31 @@ export async function generateA4Pages(
     const lines = insights.split("\n");
     let startAI = false;
     for (const line of lines) {
-      if (y > A4H - 150) break;
-      // 从「健康展望」章节开始渲染 AI 解读内容
+      if (y > A4H - 160) break;
       if (line.startsWith("## 健康展望")) { startAI = true; continue; }
       if (!startAI) continue;
       if (line.startsWith("> ")) {
         y += 4;
         ctx.fillStyle = "#8494A6";
-        ctx.font = "12px 'PingFang SC','Microsoft YaHei',sans-serif";
-        y = wrapText(ctx, line.replace("> ", ""), MARGIN + 16, y, A4W - MARGIN * 2 - 16, 20);
+        ctx.font = "11px 'PingFang SC','Microsoft YaHei',sans-serif";
+        y = wrapText(ctx, line.replace("> ", ""), MARGIN + 16, y, A4W - MARGIN * 2 - 16, 18);
         y += 8;
       } else if (line.trim() === "") {
-        y += 12;
+        y += 10;
       } else if (line.startsWith("- ")) {
         ctx.fillStyle = "#55677A";
-        ctx.font = "13px 'PingFang SC','Microsoft YaHei',sans-serif";
+        ctx.font = "12px 'PingFang SC','Microsoft YaHei',sans-serif";
         ctx.fillText("•", MARGIN + 8, y);
-        y = wrapText(ctx, line.replace("- ", ""), MARGIN + 24, y, A4W - MARGIN * 2 - 24, 22);
+        y = wrapText(ctx, line.replace("- ", ""), MARGIN + 24, y, A4W - MARGIN * 2 - 24, 20);
         y += 6;
       } else {
-        y = drawParagraph(ctx, line, y, false);
-        y += 8;
+        // 使用更紧凑的字体与行距
+        ctx.fillStyle = "#2B3A48";
+        ctx.font = "12px 'PingFang SC','Microsoft YaHei',sans-serif";
+        ctx.textAlign = "left";
+        ctx.textBaseline = "alphabetic";
+        y = wrapText(ctx, "    " + line, MARGIN, y, A4W - MARGIN * 2, 20);
+        y += 6;
       }
     }
 
@@ -796,17 +896,17 @@ export async function generateA4Pages(
       qrImg.onerror = () => resolve();
       qrImg.src = qrDataUrl;
     });
-    const qrY = A4H - 130;
-    ctx.drawImage(qrImg, MARGIN, qrY, 80, 80);
+    const qrY = A4H - 150;
+    ctx.drawImage(qrImg, MARGIN, qrY, 70, 70);
     ctx.fillStyle = "#0A5BA8";
-    ctx.font = "700 14px 'PingFang SC','Microsoft YaHei',sans-serif";
+    ctx.font = "700 13px 'PingFang SC','Microsoft YaHei',sans-serif";
     ctx.textAlign = "left";
     ctx.textBaseline = "alphabetic";
-    ctx.fillText("扫码立即测试评估", MARGIN + 96, qrY + 30);
+    ctx.fillText("扫码立即测试评估", MARGIN + 86, qrY + 26);
     ctx.fillStyle = "#8494A6";
     ctx.font = "11px 'PingFang SC','Microsoft YaHei',sans-serif";
-    ctx.fillText("你也来测一测自己的健康寿命指数", MARGIN + 96, qrY + 52);
-    ctx.fillText(qrUrl, MARGIN + 96, qrY + 70);
+    ctx.fillText("你也来测一测自己的健康寿命指数", MARGIN + 86, qrY + 46);
+    ctx.fillText(qrUrl, MARGIN + 86, qrY + 62);
 
     drawDocFooter(ctx, 5, TOTAL, dateStr);
     pages.push(canvas.toDataURL("image/jpeg", 0.92));

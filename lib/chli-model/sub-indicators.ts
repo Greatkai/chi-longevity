@@ -81,7 +81,6 @@ export const LAB_CHECKLIST: LabCheckItem[] = [
   { subKey: "B3", dimension: "B", name: "炎症标志物检测", desc: "评估慢性炎症水平", tests: "hs-CRP、IL-6、TNF-α", recommended: true },
   { subKey: "M1", dimension: "M", name: "血糖代谢检测", desc: "评估糖代谢与糖尿病风险", tests: "空腹血糖、糖化血红蛋白 HbA1c", recommended: true },
   { subKey: "M2", dimension: "M", name: "血脂检测", desc: "评估动脉粥样硬化风险", tests: "LDL-C、ApoB、总胆固醇、甘油三酯", recommended: true },
-  { subKey: "M3", dimension: "M", name: "血压测量", desc: "评估心血管风险", tests: "收缩压、舒张压", recommended: false },
   { subKey: "M5", dimension: "M", name: "肝肾功能检测", desc: "评估代谢与脏器功能", tests: "ALT、AST、肌酐、eGFR、尿酸", recommended: true },
   { subKey: "F2", dimension: "F", name: "步速/步行测试", desc: "评估躯体运动功能", tests: "6分钟步行、步速", recommended: false },
   { subKey: "F3", dimension: "F", name: "握力测量", desc: "评估肌肉力量", tests: "握力计", recommended: false },
