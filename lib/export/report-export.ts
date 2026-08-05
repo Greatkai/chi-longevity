@@ -50,9 +50,12 @@ export async function exportReport(
   const siteUrl = typeof window !== "undefined" ? window.location.origin : "";
   const pages = await generateA4Pages(result, siteUrl);
   const pdf = new jsPDF("p", "pt", "a4");
+  // A4 纸张实际尺寸为 595×842pt，图片需缩放适配纸张，避免超出被裁切
+  const pageW = 595;
+  const pageH = 842;
   pages.forEach((dataUrl, i) => {
     if (i > 0) pdf.addPage();
-    pdf.addImage(dataUrl, "JPEG", 0, 0, 794, 1123);
+    pdf.addImage(dataUrl, "JPEG", 0, 0, pageW, pageH);
   });
   pdf.save(`${filename}.pdf`);
 }
@@ -234,8 +237,9 @@ export async function exportShareImage(
 
   /** 绘制雷达图 */
   const radarCx = W / 2;
-  const radarCy = headerH + bodyH / 2 - 20;
-  const radarR = Math.min(W - 180, bodyH - 180) / 2;
+  const radarCy = headerH + bodyH / 2 - 10;
+  // 缩小半径，确保含标签时不会超出白色卡片边界
+  const radarR = Math.min((W - 64) / 2 - 150, (bodyH - 120) / 2 - 60);
   const n = dims.length;
   // 每个轴的角度（从顶部开始顺时针）
   const axes: { angle: number; dim: typeof dims[0] }[] = dims.map((d, i) => ({
@@ -328,41 +332,40 @@ export async function exportShareImage(
     ctx.stroke();
   });
 
-  // 维度标签（轴外侧）
-  ctx.font = "600 18px 'PingFang SC','Microsoft YaHei',sans-serif";
+  // 维度标签（轴外侧，较短名称）
   ctx.textBaseline = "middle";
   for (let i = 0; i < n; i++) {
     const a = axes[i];
-    const labelR = radarR + 38;
+    const labelR = radarR + 34;
     const lx = radarCx + Math.cos(a.angle) * labelR;
     const ly = radarCy + Math.sin(a.angle) * labelR;
 
-    // 标签背景
     const c = LEVEL_COLORS[a.dim.level] || "#3186D8";
     const s = Math.round(a.dim.score);
 
+    // 使用短名称
+    const shortName = shortDimName(a.dim.name);
     ctx.fillStyle = "#FFFFFF";
-    const labelText = `${a.dim.key} · ${a.dim.name}`;
+    ctx.font = "600 13px 'PingFang SC','Microsoft YaHei',sans-serif";
+    const labelText = `${a.dim.key} · ${shortName}`;
     const tw = ctx.measureText(labelText).width;
-    roundRect(ctx, lx - tw / 2 - 12, ly - 13, tw + 24, 26, 13);
+    roundRect(ctx, lx - tw / 2 - 10, ly - 12, tw + 20, 24, 12);
     ctx.fill();
     ctx.strokeStyle = c;
     ctx.lineWidth = 2;
     ctx.stroke();
 
-    // 标签文字
     ctx.fillStyle = "#12232E";
-    ctx.font = "600 14px 'PingFang SC','Microsoft YaHei',sans-serif";
+    ctx.font = "600 13px 'PingFang SC','Microsoft YaHei',sans-serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText(labelText, lx, ly);
 
     // 分数（标签下方）
     ctx.fillStyle = c;
-    ctx.font = "700 16px 'PingFang SC','Microsoft YaHei',sans-serif";
-    const scoreY = ly + (Math.abs(Math.sin(a.angle)) > 0.3 ? (a.angle > 0 ? 24 : -24) : 0);
-    const scoreXOff = Math.abs(Math.cos(a.angle)) > 0.7 ? (a.angle > 0 ? 0 : 0) : 0;
-    ctx.fillText(`${s}`, lx + scoreXOff, scoreY);
+    ctx.font = "700 15px 'PingFang SC','Microsoft YaHei',sans-serif";
+    const scoreY = ly + (Math.abs(Math.sin(a.angle)) > 0.4 ? (a.angle > 0 ? 22 : -22) : 22);
+    ctx.fillText(`${s}`, lx, scoreY);
   }
 
   /* ---------- 底部：二维码 ---------- */
@@ -435,6 +438,19 @@ function pickShareQuote(r: AssessmentResult): string {
   if (r.level === "moderate") return "读懂身体信号，开启改善之旅";
   if (r.level === "highRisk") return "健康管理，从一次评估开始";
   return "好的身体，是最值得投资的长寿";
+}
+
+/** 截短维度名，便于在雷达图标签显示 */
+function shortDimName(name: string): string {
+  const map: Record<string, string> = {
+    "生物年龄指数": "生物年龄",
+    "功能健康指数": "功能健康",
+    "代谢与慢病风险指数": "代谢慢病",
+    "生活方式与行为指数": "生活方式",
+    "心理认知与社交参与指数": "心理认知",
+    "数字健康轨迹指数": "数字健康",
+  };
+  return map[name] || name.replace(/指数$/, "");
 }
 
 /* ==================== A4 PDF 文档排版（Canvas 绘制） ==================== */

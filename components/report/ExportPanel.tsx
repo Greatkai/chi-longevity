@@ -45,9 +45,10 @@ export function ExportPanel({ result }: Props) {
       const { generateA4Pages } = await import("@/lib/export/report-export");
       const pages = await generateA4Pages(result, siteUrl);
       const pdf = new jsPDF("p", "pt", "a4");
+      // A4 纸张实际尺寸 595×842pt，图片缩放适配纸张
       pages.forEach((dataUrl, i) => {
         if (i > 0) pdf.addPage();
-        pdf.addImage(dataUrl, "JPEG", 0, 0, 794, 1123);
+        pdf.addImage(dataUrl, "JPEG", 0, 0, 595, 842);
       });
       pdf.save("长寿评估报告.pdf");
       setMessage({ type: "success", text: "PDF 报告已生成，正在下载" });

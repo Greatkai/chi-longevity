@@ -22,6 +22,7 @@ import { DimensionRadar } from "@/components/report/DimensionRadar";
 import { DimensionBars } from "@/components/report/DimensionBars";
 import { InsightsCard } from "@/components/report/InsightsCard";
 import { ExportPanel } from "@/components/report/ExportPanel";
+import { CalcDetails } from "@/components/report/CalcDetails";
 
 export default function ReportPage() {
   const router = useRouter();
@@ -367,6 +368,11 @@ export default function ReportPage() {
             </div>
           </div>
         )}
+        </div>
+
+        {/* 详细计算逻辑 */}
+        <div className="mt-8">
+          <CalcDetails result={result} />
         </div>
 
         {/* 导出区 */}
