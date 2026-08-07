@@ -93,21 +93,24 @@ export function Footer() {
             </li>
           </ul>
 
-          {/* 发布单位 */}
+          {/* 白皮书发布单位（本项目依据其开发） */}
           <div className="mt-5">
-            <h5 className="mb-2 text-xs font-semibold text-white/60">指导单位</h5>
+            <h5 className="mb-2 text-xs font-semibold text-white/60">《白皮书》指导单位</h5>
             <p className="text-xs leading-relaxed text-white/55">
               北京银发健康长寿研究院
               <br />
               上海交通大学医学遗传研究所
             </p>
-            <h5 className="mb-2 mt-3 text-xs font-semibold text-white/60">联合发布</h5>
+            <h5 className="mb-2 mt-3 text-xs font-semibold text-white/60">《白皮书》联合发布单位</h5>
             <p className="text-xs leading-relaxed text-white/55">
               亚太长寿医学学会 (APLMS)
               <br />
               平安健康互联网股份有限公司
               <br />
               中国抗衰老促进会
+            </p>
+            <p className="mt-2 text-[11px] leading-relaxed text-white/40">
+              本网站依据《2026 高质量健康长寿白皮书》开发，非上述单位官方出品。
             </p>
           </div>
         </div>
@@ -116,9 +119,8 @@ export function Footer() {
       <div className="border-t border-white/10">
         <div className="container-page flex flex-col items-center justify-between gap-2 py-4 text-center text-xs text-white/40 md:flex-row md:text-left">
           <div>© 2026 百岁白皮书 · 中国百岁健康标准指数评估系统 版权所有</div>
-          <div>
-            联合发布：
-            <span className="text-white/55">亚太长寿医学学会 · 平安健康 · 中国抗衰老促进会</span>
+          <div className="text-white/40">
+            依据《2026 高质量健康长寿白皮书》开发
           </div>
         </div>
       </div>
